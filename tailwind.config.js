@@ -1,0 +1,102 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      fontFamily: {
+        serif: ['Instrument Serif', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        stone: {
+          50: '#faf8f5',
+          100: '#f5f3f0',
+          200: '#e8e5e0',
+          300: '#d4d0ca',
+          400: '#a8a29e',
+          500: '#78716c',
+          600: '#57534e',
+          700: '#44403c',
+          800: '#292524',
+          900: '#1c1917',
+        },
+        accent: {
+          50: '#fdf5ef',
+          100: '#fae8d8',
+          200: '#f4ccaa',
+          300: '#eba476',
+          400: '#e07d4b',
+          500: '#d46332',
+          600: '#b84a23',
+          700: '#963a1e',
+          800: '#7a3120',
+          900: '#652b1f',
+        },
+        success: '#4a9e5c',
+        warning: '#d97706',
+        info: '#2563eb',
+      },
+      boxShadow: {
+        'card': '0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.02)',
+        'card-hover': '0 8px 24px rgba(0,0,0,.07)',
+        'chat': '0 12px 48px rgba(0,0,0,.12), 0 4px 16px rgba(0,0,0,.06)',
+        'fab': '0 4px 20px rgba(224,125,75,.3)',
+      },
+      animation: {
+        'waveform': 'waveform 1.2s ease-in-out infinite',
+        'pulse-ring': 'pulse-ring 2s ease-in-out infinite',
+        'slide-up': 'slide-up 0.3s ease-out',
+        'fade-in': 'fade-in 0.2s ease-out',
+        'highlight-glow': 'highlight-glow 3s ease-in-out',
+        'orb-breathe': 'orb-breathe 3s ease-in-out infinite',
+        'orb-ripple': 'orb-ripple 1.5s ease-out infinite',
+        'orb-ripple-delay': 'orb-ripple 1.5s ease-out infinite 0.5s',
+        'orb-spin': 'orb-spin 2s linear infinite',
+        'orb-wave': 'orb-wave 1.2s ease-out infinite',
+        'orb-wave-delay': 'orb-wave 1.2s ease-out infinite 0.4s',
+      },
+      keyframes: {
+        waveform: {
+          '0%, 100%': { height: '8px' },
+          '50%': { height: '28px' },
+        },
+        'pulse-ring': {
+          '0%': { boxShadow: '0 0 0 0 rgba(224,125,75,.3)' },
+          '70%': { boxShadow: '0 0 0 8px rgba(224,125,75,0)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(224,125,75,0)' },
+        },
+        'slide-up': {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'highlight-glow': {
+          '0%': { boxShadow: '0 0 0 0 rgba(224,125,75,0)' },
+          '15%': { boxShadow: '0 0 24px 4px rgba(224,125,75,.25)' },
+          '85%': { boxShadow: '0 0 24px 4px rgba(224,125,75,.25)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(224,125,75,0)' },
+        },
+        'orb-breathe': {
+          '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 30px 10px rgba(168,162,158,.15)' },
+          '50%': { transform: 'scale(1.05)', boxShadow: '0 0 40px 15px rgba(168,162,158,.25)' },
+        },
+        'orb-ripple': {
+          '0%': { transform: 'scale(1)', opacity: '0.6' },
+          '100%': { transform: 'scale(2.2)', opacity: '0' },
+        },
+        'orb-spin': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        'orb-wave': {
+          '0%': { transform: 'scale(1)', opacity: '0.4' },
+          '100%': { transform: 'scale(1.8)', opacity: '0' },
+        },
+      },
+    },
+  },
+  plugins: [],
+}
