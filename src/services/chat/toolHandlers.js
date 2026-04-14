@@ -57,6 +57,7 @@ export function handleToolCall(tool) {
 
     case 'show_order_summary': {
       const cart = useCartStore.getState()
+      const shippingOpt = cart.shippingOption()
       return {
         type: 'orderSummary',
         data: {
@@ -64,6 +65,8 @@ export function handleToolCall(tool) {
           subtotal: cart.subtotal(),
           tax: cart.tax(),
           shipping: cart.shipping(),
+          shippingMethod: shippingOpt?.name || 'Standard',
+          shippingDescription: shippingOpt?.description || '5-7 business days',
           total: cart.total(),
         },
       }
@@ -87,7 +90,7 @@ export function handleToolCall(tool) {
 
     case 'process_order': {
       const cart = useCartStore.getState()
-      const orderId = useOrderStore.getState().placeOrder(cart.items, 'addr_home', 'pm_1')
+      const orderId = useOrderStore.getState().placeOrder(cart.items, 'addr_home', 'pm_1', cart.selectedShipping)
       cart.clearCart()
       return { type: 'confirmation', data: { orderId } }
     }

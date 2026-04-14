@@ -12,6 +12,8 @@ export const useChatStore = create((set, get) => ({
   highlightedProductId: null,
   navigateTo: null,
   latestResults: [],
+  latestNonProductResults: [],
+  activeShowcaseIndex: 0,
   voiceTranscript: '',
   hasGreeted: false,
 
@@ -33,8 +35,10 @@ export const useChatStore = create((set, get) => ({
   setListening: (val) => set({ isListening: val }),
   setSpeaking: (val) => set({ isSpeaking: val }),
   setVoiceTranscript: (val) => set({ voiceTranscript: val }),
-  setLatestResults: (results) => set({ latestResults: results }),
-  clearLatestResults: () => set({ latestResults: [] }),
+  setLatestResults: (results) => set({ latestResults: results, activeShowcaseIndex: 0 }),
+  setLatestNonProductResults: (results) => set({ latestNonProductResults: results }),
+  clearLatestResults: () => set({ latestResults: [], latestNonProductResults: [], activeShowcaseIndex: 0 }),
+  setActiveShowcaseIndex: (idx) => set({ activeShowcaseIndex: idx }),
   setHasGreeted: (val) => set({ hasGreeted: val }),
 
   highlightProduct: (productId) => {
@@ -54,6 +58,8 @@ export const useChatStore = create((set, get) => ({
     conversationHistory: [],
     isTyping: false,
     latestResults: [],
+    latestNonProductResults: [],
+    activeShowcaseIndex: 0,
     voiceTranscript: '',
     highlightedProductId: null,
     navigateTo: null,

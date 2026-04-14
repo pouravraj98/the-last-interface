@@ -69,12 +69,18 @@ export async function sendChatMessage(text, image = null, options = {}) {
       }
     }
 
-    // 10. Only update showcase when NEW products are shown (keeps showcase stable)
+    // 10. Split results: products go to showcase, non-products go to separate display
     const productToolResults = toolResults.filter(r =>
       r.type === 'productCard' || r.type === 'productCards' || r.type === 'productDetail'
     )
+    const nonProductToolResults = toolResults.filter(r =>
+      r.type !== 'productCard' && r.type !== 'productCards' && r.type !== 'productDetail'
+    )
     if (productToolResults.length > 0) {
       useChatStore.getState().setLatestResults(productToolResults)
+    }
+    if (nonProductToolResults.length > 0) {
+      useChatStore.getState().setLatestNonProductResults(nonProductToolResults)
     }
 
     // 11. Fallback: if voice mode and AI showed products but gave no/minimal text, generate spoken description

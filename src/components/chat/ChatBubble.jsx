@@ -61,7 +61,8 @@ function getPreferredSize(product) {
 /** Rich interactive detail card — image carousel + size picker + add to cart inside chat */
 function ProductDetailCard({ product }) {
   const preferred = getPreferredSize(product)
-  const defaultSize = product.sizes.includes(preferred) ? preferred : null
+  const preferredAvail = preferred && product.sizes.includes(preferred) && (product.sizeStock ? product.sizeStock[preferred] !== false : true)
+  const defaultSize = preferredAvail ? preferred : null
   const [selectedSize, setSelectedSize] = useState(defaultSize)
   const [added, setAdded] = useState(false)
   const [notified, setNotified] = useState(false)
@@ -207,21 +208,38 @@ function ProductDetailCard({ product }) {
           /* In stock — size selector + add to cart */
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-2">Select Size</p>
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`min-w-[36px] h-8 px-2 rounded-md border text-xs font-medium transition-all ${
-                    selectedSize === size
-                      ? 'border-stone-900 bg-stone-900 text-white'
-                      : 'border-stone-200 text-stone-600 hover:border-stone-400'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {product.sizes.map((size) => {
+                const sizeAvail = product.sizeStock ? product.sizeStock[size] !== false : true
+                return (
+                  <button
+                    key={size}
+                    onClick={() => sizeAvail ? setSelectedSize(size) : null}
+                    className={`min-w-[36px] h-8 px-2 rounded-md border text-xs font-medium transition-all ${
+                      !sizeAvail
+                        ? 'border-stone-100 text-stone-300 line-through cursor-not-allowed'
+                        : selectedSize === size
+                        ? 'border-stone-900 bg-stone-900 text-white'
+                        : 'border-stone-200 text-stone-600 hover:border-stone-400'
+                    }`}
+                    title={!sizeAvail ? `Size ${size} out of stock` : ''}
+                  >
+                    {size}
+                  </button>
+                )
+              })}
             </div>
+            {product.sizeStock && Object.values(product.sizeStock).some(v => !v) && (
+              <button
+                onClick={() => {
+                  const oosSize = product.sizes.find(s => product.sizeStock?.[s] === false)
+                  sendChatMessage(`Notify me when the ${product.name} in size ${oosSize} is back in stock`)
+                }}
+                className="text-[10px] text-accent-500 font-medium mb-3 hover:text-accent-400 transition-colors"
+              >
+                Your size unavailable? Get notified →
+              </button>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={handleAddToCart}
@@ -269,7 +287,8 @@ function OrderSummaryCard({ data }) {
       </div>
       <div className="border-t border-stone-100 pt-3 space-y-1 text-sm">
         <div className="flex justify-between text-stone-500"><span>Subtotal</span><span>${data.subtotal.toFixed(2)}</span></div>
-        <div className="flex justify-between text-stone-500"><span>Shipping</span><span>{data.shipping === 0 ? 'Free' : `$${data.shipping.toFixed(2)}`}</span></div>
+        <div className="flex justify-between text-stone-500"><span>{data.shippingMethod || 'Shipping'}</span><span>{data.shipping === 0 ? 'Free' : `$${data.shipping.toFixed(2)}`}</span></div>
+        {data.shippingDescription && <div className="flex justify-between text-stone-400 text-[10px]"><span>Delivery</span><span>{data.shippingDescription}</span></div>}
         <div className="flex justify-between text-stone-500"><span>Tax</span><span>${data.tax.toFixed(2)}</span></div>
         <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-100"><span>Total</span><span>${data.total.toFixed(2)}</span></div>
       </div>

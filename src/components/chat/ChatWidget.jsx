@@ -97,8 +97,8 @@ export default function ChatWidget() {
   const handleSend = useCallback(async (text, image) => {
     if (!text?.trim() && !image) return
     const responseText = await sendChatMessage(text?.trim() || '', image || null)
-    // Auto-speak AI response if voice is enabled
-    if (responseText) {
+    // Auto-speak AI response only in voice mode
+    if (responseText && useChatStore.getState().voiceMode) {
       voice.speakText(responseText)
     }
   }, [voice.speakText])

@@ -18,7 +18,8 @@ function getPreferredSize(product) {
 
 export default function VoiceProductShowcase({ product, productList, activeIndex, onNavigate }) {
   const preferred = getPreferredSize(product)
-  const defaultSize = product.sizes?.includes(preferred) ? preferred : null
+  const preferredAvail = preferred && product.sizes?.includes(preferred) && (product.sizeStock ? product.sizeStock[preferred] !== false : true)
+  const defaultSize = preferredAvail ? preferred : null
   const [selectedSize, setSelectedSize] = useState(defaultSize)
   const [currentImg, setCurrentImg] = useState(0)
   const [buying, setBuying] = useState(false)
@@ -30,7 +31,8 @@ export default function VoiceProductShowcase({ product, productList, activeIndex
     setCurrentImg(0)
     setBuying(false)
     const pref = getPreferredSize(product)
-    setSelectedSize(product.sizes?.includes(pref) ? pref : null)
+    const prefAvail = pref && product.sizes?.includes(pref) && (product.sizeStock ? product.sizeStock[pref] !== false : true)
+    setSelectedSize(prefAvail ? pref : null)
   }, [product.id])
 
   if (!product) return null
@@ -166,21 +168,38 @@ export default function VoiceProductShowcase({ product, productList, activeIndex
       {product.inStock && (
         <>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-2">Select Size</p>
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {product.sizes.map((size) => (
-              <button
-                key={size}
-                onClick={() => setSelectedSize(size)}
-                className={`min-w-[36px] h-8 px-2 rounded-md border text-xs font-medium transition-all ${
-                  selectedSize === size
-                    ? 'border-stone-900 bg-stone-900 text-white'
-                    : 'border-stone-200 text-stone-600 hover:border-stone-400'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {product.sizes.map((size) => {
+              const sizeAvail = product.sizeStock ? product.sizeStock[size] !== false : true
+              return (
+                <button
+                  key={size}
+                  onClick={() => sizeAvail ? setSelectedSize(size) : null}
+                  className={`min-w-[36px] h-8 px-2 rounded-md border text-xs font-medium transition-all relative ${
+                    !sizeAvail
+                      ? 'border-stone-100 text-stone-300 line-through cursor-not-allowed'
+                      : selectedSize === size
+                      ? 'border-stone-900 bg-stone-900 text-white'
+                      : 'border-stone-200 text-stone-600 hover:border-stone-400'
+                  }`}
+                  title={!sizeAvail ? `Size ${size} out of stock` : ''}
+                >
+                  {size}
+                </button>
+              )
+            })}
           </div>
+          {product.sizeStock && Object.values(product.sizeStock).some(v => !v) && (
+            <button
+              onClick={() => {
+                const oosSize = preferred && product.sizeStock?.[preferred] === false ? preferred : product.sizes.find(s => product.sizeStock?.[s] === false)
+                sendChatMessage(`Notify me when the ${product.name} in size ${oosSize} is back in stock`)
+              }}
+              className="text-[10px] text-accent-500 font-medium mb-3 hover:text-accent-400 transition-colors"
+            >
+              Your size unavailable? Get notified →
+            </button>
+          )}
         </>
       )}
 

@@ -19,7 +19,7 @@ export function buildContextString() {
 
   const lines = ['## Current Browsing Context']
 
-  // Voice showcase awareness — what product is the user viewing in the voice split view
+  // Voice showcase awareness — what product is the user CURRENTLY viewing in the split view
   if (chatState.voiceMode && chatState.latestResults.length > 0) {
     const showcaseProducts = []
     for (const r of chatState.latestResults) {
@@ -28,10 +28,14 @@ export function buildContextString() {
       else if (r.type === 'productDetail' && r.data?.product) showcaseProducts.push(r.data.product)
     }
     if (showcaseProducts.length > 0) {
-      lines.push(`- Voice showcase is currently displaying: "${showcaseProducts[0].name}" ($${showcaseProducts[0].price})`)
-      lines.push(`  When the user says "this one", "this product", or "it" — they are referring to ${showcaseProducts[0].name}.`)
+      const activeIdx = chatState.activeShowcaseIndex || 0
+      const activeProduct = showcaseProducts[activeIdx] || showcaseProducts[0]
+      lines.push(`- Voice showcase: user is currently viewing "${activeProduct.name}" ($${activeProduct.price}, ${activeProduct.category}/${activeProduct.subcategory})`)
+      lines.push(`  Product details: ${activeProduct.description}`)
+      lines.push(`  Colors: ${activeProduct.colors.map(c => c.name).join(', ')} | Sizes: ${activeProduct.sizes.join(', ')}`)
+      lines.push(`  When the user says "this one", "this product", "it", or "this" — they mean ${activeProduct.name}.`)
       if (showcaseProducts.length > 1) {
-        lines.push(`  Other products in the showcase: ${showcaseProducts.slice(1).map(p => p.name).join(', ')}`)
+        lines.push(`  Other products in showcase (${showcaseProducts.length} total): ${showcaseProducts.filter((_, i) => i !== activeIdx).map(p => p.name).join(', ')}`)
       }
     }
   }

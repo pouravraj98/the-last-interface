@@ -1,14 +1,26 @@
 import { create } from 'zustand'
+import { brand } from '../config/brand'
 
 export const useCartStore = create((set, get) => ({
   items: [],
+  selectedShipping: 'standard',
 
-  // Computed (called as functions since Zustand doesn't auto-compute)
+  // Computed
   itemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
   subtotal: () => get().items.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
-  tax: () => get().subtotal() * 0.0825,
-  shipping: () => get().subtotal() >= 75 ? 0 : 5.95,
+  tax: () => get().subtotal() * brand.taxRate,
+  shipping: () => {
+    const option = brand.shippingOptions.find(o => o.id === get().selectedShipping)
+    if (!option) return 5.95
+    // Free standard shipping above threshold
+    if (option.freeAbove && get().subtotal() >= option.freeAbove) return 0
+    return option.price
+  },
   total: () => get().subtotal() + get().tax() + get().shipping(),
+  shippingOption: () => brand.shippingOptions.find(o => o.id === get().selectedShipping) || brand.shippingOptions[0],
+
+  // Actions
+  setShipping: (id) => set({ selectedShipping: id }),
 
   addItem: (product, size, color = null, quantity = 1) => set((state) => {
     const existing = state.items.find(
@@ -40,5 +52,5 @@ export const useCartStore = create((set, get) => ({
         ),
   })),
 
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], selectedShipping: 'standard' }),
 }))

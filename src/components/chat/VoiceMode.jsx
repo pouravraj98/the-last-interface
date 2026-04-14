@@ -18,6 +18,7 @@ const CHECKOUT_TYPES = ['orderSummary', 'addressCard', 'paymentCard', 'confirmat
 export default function VoiceMode({ voice, onSend }) {
   const isTyping = useChatStore((s) => s.isTyping)
   const latestResults = useChatStore((s) => s.latestResults)
+  const latestNonProductResults = useChatStore((s) => s.latestNonProductResults)
   const messages = useChatStore((s) => s.messages)
   const [activeIndex, setActiveIndex] = useState(0)
   const autoListenRef = useRef(true)
@@ -25,19 +26,20 @@ export default function VoiceMode({ voice, onSend }) {
 
   const { isListening, isSpeaking, interimTranscript, startListening, stopListening, stopSpeaking } = voice
 
-  // Extract products and non-product results from latestResults
+  // Extract products from latestResults
   const products = []
-  const nonProductResults = []
   for (const r of latestResults) {
     if (r.type === 'productCards' && r.data?.products) products.push(...r.data.products)
     else if (r.type === 'productCard' && r.data?.product) products.push(r.data.product)
     else if (r.type === 'productDetail' && r.data?.product) products.push(r.data.product)
-    else nonProductResults.push(r)
   }
+
+  // Non-product results come from separate store field
+  const nonProductResults = latestNonProductResults || []
 
   const hasProducts = products.length > 0
   const activeProduct = products[activeIndex] || null
-  const isCheckout = latestResults.some(r => CHECKOUT_TYPES.includes(r.type))
+  const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type))
 
   // Reset active index when products change
   useEffect(() => {
@@ -86,6 +88,7 @@ export default function VoiceMode({ voice, onSend }) {
   // which would overwrite latestResults and break the product list)
   function handleProductNavigate(newIndex) {
     setActiveIndex(newIndex)
+    useChatStore.getState().setActiveShowcaseIndex(newIndex)
     const p = products[newIndex]
     if (p) {
       voice.stopSpeaking()
@@ -361,7 +364,62 @@ function NonProductCard({ result }) {
     )
   }
 
-  // Fallback for unhandled types
+  if (r.type === 'orderStatus' && r.data?.order) {
+    const order = r.data.order
+    return (
+      <div className="bg-white rounded-lg border border-stone-200 p-3 text-xs max-h-[250px] overflow-y-auto">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <p className="font-semibold text-stone-900">Order #{order.id}</p>
+            <p className="text-stone-400">{order.items.map(i => i.name).join(', ')}</p>
+          </div>
+          <span className={`px-2 py-0.5 rounded-sm text-[9px] font-bold uppercase ${
+            order.status === 'delivered' ? 'bg-green-50 text-green-600' :
+            order.status === 'in_transit' ? 'bg-blue-50 text-blue-600' :
+            'bg-orange-50 text-orange-600'
+          }`}>{order.status.replace('_', ' ')}</span>
+        </div>
+        <div className="space-y-1.5">
+          {order.timeline.map((step, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full shrink-0 ${
+                step.state === 'done' ? 'bg-green-500' :
+                step.state === 'current' ? 'bg-accent-400 animate-pulse' :
+                'bg-stone-200'
+              }`} />
+              <div className="flex justify-between flex-1">
+                <span className={`${step.state === 'pending' ? 'text-stone-300' : 'text-stone-600'}`}>{step.label}</span>
+                <span className="text-stone-400">{step.date}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-stone-900 font-semibold mt-2 pt-2 border-t border-stone-100">${order.total.toFixed(2)}</p>
+      </div>
+    )
+  }
+
+  if (r.type === 'allOrders' && r.data?.orders) {
+    return (
+      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        {r.data.orders.map((order) => (
+          <div key={order.id} className="bg-white rounded-lg border border-stone-200 p-3 text-xs">
+            <div className="flex justify-between items-start mb-1">
+              <p className="font-semibold text-stone-900">#{order.id}</p>
+              <span className={`px-1.5 py-0.5 rounded-sm text-[8px] font-bold uppercase ${
+                order.status === 'delivered' ? 'bg-green-50 text-green-600' :
+                order.status === 'in_transit' ? 'bg-blue-50 text-blue-600' :
+                'bg-orange-50 text-orange-600'
+              }`}>{order.status.replace('_', ' ')}</span>
+            </div>
+            <p className="text-stone-500 truncate">{order.items.map(i => i.name).join(', ')}</p>
+            <p className="text-stone-900 font-medium mt-1">${order.total.toFixed(2)}</p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (r.type === 'wishlistUpdate') {
     return (
       <div className="bg-accent-50 rounded-lg border border-accent-200 p-3 text-xs text-accent-700">

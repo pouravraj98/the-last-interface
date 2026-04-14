@@ -11,7 +11,7 @@ import { buildContextString } from './contextBridge'
 /** Serialize product catalog for the AI */
 function buildCatalog() {
   return products.map((p, i) =>
-    `[${i}] id="${p.id}" ${p.name} — $${p.price} — ${p.category}/${p.subcategory} — ${p.inStock ? 'IN STOCK' : 'OUT OF STOCK'} — Colors: ${p.colors.map(c => c.name).join(', ')} — Material: ${p.material} — Style: ${p.style.join(', ')} | Use: ${p.use.join(', ')} — Visual: ${p.visual} — Sizes: ${p.sizes.join(', ')} — Rating: ★${p.rating} (${p.reviewCount}) ${p.badge ? `[${p.badge}]` : ''}`
+    `[${i}] id="${p.id}" ${p.name} — $${p.price} — ${p.category}/${p.subcategory} — ${p.inStock ? 'IN STOCK' : 'OUT OF STOCK'} — Fit: ${p.fit || 'N/A'} — TrueToSize: ${p.trueToSize || 'N/A'} — Fabric: ${p.fabricComposition || p.material} — Care: ${p.careInstructions || 'N/A'} — Colors: ${p.colors.map(c => c.name).join(', ')} — Style: ${p.style.join(', ')} | Use: ${p.use.join(', ')} — Visual: ${p.visual} — Sizes: ${p.sizes.join(', ')}${p.sizeStock ? ` (OOS: ${Object.entries(p.sizeStock).filter(([_,v]) => !v).map(([s]) => s).join(',')})` : ''} — Rating: ★${p.rating} (${p.reviewCount}) ${p.badge ? `[${p.badge}]` : ''}`
   ).join('\n')
 }
 
@@ -20,7 +20,7 @@ export function buildSystemPrompt() {
   const user = useUserStore.getState().user
   const addresses = useUserStore.getState().addresses
   const orders = useOrderStore.getState().orders
-  const voiceEnabled = useChatStore.getState().voiceEnabled
+  const voiceMode = useChatStore.getState().voiceMode
   const contextString = buildContextString()
 
   return `You are the AI shopping assistant for FORMA, a premium fashion & apparel brand. Your name is simply "FORMA Assistant."
@@ -116,7 +116,11 @@ Also BAD: "Here you go!" + show_products (too brief for voice — says nothing u
 - For checkout: show_order_summary first, then show_address, then show_payment, then ONLY process_order after explicit user confirmation
 - For order status: use show_all_orders for general questions, show_order_status for specific orders
 - Never ask for payment details — card is on file
-- Tax rate: 8.25%. Shipping: free over $75, otherwise $5.95
+- Tax rate: 8.25%
+- Shipping options: Standard (free over $75, else $5.95, 5-7 days) | Express ($9.95, 2-3 days) | Next Day ($14.95, order by 2 PM)
+- When user asks about delivery: mention shipping options and estimated dates
+- When user asks about care/washing: reference the product's careInstructions field
+- When user asks about fit/sizing: reference fit, trueToSize, and modelInfo fields
 - Use add_to_cart to add items — always confirm size first
 - Use show_reviews when user asks about reviews, ratings, "what do people think", "is it worth it", or "any feedback"
 - When showing reviews, also mention a specific insight from the reviews
@@ -124,6 +128,8 @@ Also BAD: "Here you go!" + show_products (too brief for voice — says nothing u
 - Use navigate_to to direct users to browse specific pages
 - IMPORTANT: Check the "inStock" field in the catalog. If a product is OUT OF STOCK, do NOT offer to add it to cart. Instead, mention it's currently unavailable and ask if they'd like to be notified when it's back. Use notify_restock tool for this.
 - Products currently out of stock: ${products.filter(p => !p.inStock).map(p => p.name).join(', ') || 'None'}
+- Some products have specific SIZES out of stock (sizeStock field). If a product has sizeStock, check if the requested size is available. If not: "Sorry, size ${user.shoeSize} is currently out of stock for this one. Would you like me to notify you when it's back?" Use notify_restock for this.
+- Products with size-specific stock issues: ${products.filter(p => p.sizeStock && Object.values(p.sizeStock).some(v => !v)).map(p => `${p.name} (out: ${Object.entries(p.sizeStock || {}).filter(([_, v]) => !v).map(([s]) => s).join(', ')})`).join('; ') || 'None'}
 
 ## Page Context Awareness
 You receive real-time context about what the user is browsing on the website.
@@ -134,7 +140,7 @@ When context says "Currently viewing: [Product]", the user has that product on s
 - Proactively reference what they're viewing when relevant
 - If the cart has items, you can reference them naturally
 
-${voiceEnabled ? `## Voice Mode Active — BE A PERSONAL SHOPPING ASSISTANT
+${voiceMode ? `## Voice Mode Active — BE A PERSONAL SHOPPING ASSISTANT
 
 You are speaking out loud to the customer. Your text response will be read aloud via text-to-speech. This changes EVERYTHING about how you respond.
 

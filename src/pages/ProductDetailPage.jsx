@@ -7,6 +7,7 @@ import { usePageContextStore } from '../stores/usePageContextStore'
 import { sendChatMessage } from '../services/chat/index'
 import { stop as stopTTS } from '../services/tts'
 import { toast } from '../components/ui/Toast'
+import { getReviewsForProduct, getReviewSummary } from '../data/reviews'
 import ProductGrid from '../components/product/ProductGrid'
 
 export default function ProductDetailPage() {
@@ -188,24 +189,78 @@ export default function ProductDetailPage() {
               </button>
             </div>
 
-            {/* Features */}
-            {product.features && (
-              <div className="mt-10 pt-8 border-t border-stone-200">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-4">Details</h3>
-                <ul className="space-y-2">
-                  {product.features.map((feat, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-stone-600">
-                      <span className="text-stone-300 mt-0.5">—</span>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-sm text-stone-400 mt-4">Material: {product.material}</p>
+            {/* Product Specifications */}
+            <div className="mt-10 pt-8 border-t border-stone-200 space-y-8">
+              {/* Key Features */}
+              {product.features && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-4">Key Features</h3>
+                  <ul className="space-y-2">
+                    {product.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-stone-600">
+                        <span className="text-stone-300 mt-0.5">—</span>
+                        {feat}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Specifications Grid */}
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-4">Specifications</h3>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                  {product.fabricComposition && <SpecRow label="Fabric" value={product.fabricComposition} />}
+                  {product.fit && <SpecRow label="Fit" value={product.fit} />}
+                  {product.trueToSize && <SpecRow label="Sizing" value={product.trueToSize} />}
+                  {product.weight && <SpecRow label="Weight" value={product.weight} />}
+                  {product.stretch && <SpecRow label="Stretch" value={product.stretch} />}
+                  {product.closure && <SpecRow label="Closure" value={product.closure} />}
+                  {product.neckline && <SpecRow label="Neckline" value={product.neckline} />}
+                  {product.sleeveType && <SpecRow label="Sleeve" value={product.sleeveType} />}
+                  {product.length && <SpecRow label="Length" value={product.length} />}
+                  {product.pockets && <SpecRow label="Pockets" value={product.pockets} />}
+                  {product.lining && <SpecRow label="Lining" value={product.lining} />}
+                  {product.countryOfOrigin && <SpecRow label="Origin" value={product.countryOfOrigin} />}
+                </div>
+                {product.modelInfo && (
+                  <p className="text-xs text-stone-400 mt-4 italic">{product.modelInfo}</p>
+                )}
               </div>
-            )}
+
+              {/* Care Instructions */}
+              {product.careInstructions && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Care</h3>
+                  <p className="text-sm text-stone-600">{product.careInstructions}</p>
+                </div>
+              )}
+
+              {/* Shipping & Returns */}
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Shipping & Returns</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-stone-600">
+                    <svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0H6.375c-.621 0-1.125-.504-1.125-1.125V14.25m0 0h11.25m0 0V11.625m0 2.625H5.25m11.25 0V4.875c0-.621-.504-1.125-1.125-1.125H5.25" /></svg>
+                    Free standard shipping on orders over $75
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-stone-600">
+                    <svg className="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+                    Free 30-day returns & exchanges
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-stone-600">
+                    <svg className="w-4 h-4 text-stone-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    Express (2-3 days) & Next Day delivery available
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Reviews */}
+      <ProductReviews productId={product.id} />
 
       {/* Related products */}
       {related.length > 0 && (
@@ -215,5 +270,90 @@ export default function ProductDetailPage() {
         </section>
       )}
     </div>
+  )
+}
+
+function SpecRow({ label, value }) {
+  return (
+    <div className="flex justify-between py-1.5 border-b border-stone-50">
+      <span className="text-xs text-stone-400">{label}</span>
+      <span className="text-xs text-stone-700 text-right">{value}</span>
+    </div>
+  )
+}
+
+function ProductReviews({ productId }) {
+  const reviewList = getReviewsForProduct(productId)
+  const summary = getReviewSummary(productId)
+  const [showAll, setShowAll] = useState(false)
+
+  if (reviewList.length === 0) return null
+
+  const displayReviews = showAll ? reviewList : reviewList.slice(0, 3)
+  const maxCount = Math.max(...Object.values(summary.distribution))
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 py-16 border-t border-stone-200">
+      <div className="max-w-3xl">
+        <h2 className="font-serif text-2xl text-stone-900 mb-2">Customer Reviews</h2>
+        <div className="flex items-center gap-3 mb-8">
+          <span className="text-3xl font-bold text-stone-900">★ {summary.average}</span>
+          <span className="text-stone-500">Based on {summary.count} reviews</span>
+        </div>
+
+        {/* Rating distribution */}
+        <div className="mb-8">
+          {[5, 4, 3, 2, 1].map((star) => {
+            const count = summary.distribution[star] || 0
+            const pct = maxCount > 0 ? (count / maxCount) * 100 : 0
+            return (
+              <div key={star} className="flex items-center gap-3 mb-1.5">
+                <span className="text-sm text-stone-500 w-10">{star} ★</span>
+                <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-sm text-stone-400 w-6 text-right">{count}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Individual reviews */}
+        <div className="space-y-6">
+          {displayReviews.map((review, i) => (
+            <div key={i} className="pb-6 border-b border-stone-100 last:border-0">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex">
+                  {Array.from({ length: 5 }).map((_, s) => (
+                    <span key={s} className={`text-sm ${s < review.rating ? 'text-amber-400' : 'text-stone-200'}`}>★</span>
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-stone-800">{review.name}</span>
+                {review.verified && (
+                  <span className="text-xs text-success font-medium flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Verified Purchase
+                  </span>
+                )}
+                <span className="text-xs text-stone-400 ml-auto">{review.date}</span>
+              </div>
+              <p className="text-sm font-semibold text-stone-900 mb-1">{review.title}</p>
+              <p className="text-sm text-stone-600 leading-relaxed">{review.text}</p>
+            </div>
+          ))}
+        </div>
+
+        {reviewList.length > 3 && !showAll && (
+          <button
+            onClick={() => setShowAll(true)}
+            className="mt-4 text-sm font-semibold text-accent-500 hover:text-accent-400 transition-colors"
+          >
+            Show all {reviewList.length} reviews
+          </button>
+        )}
+      </div>
+    </section>
   )
 }

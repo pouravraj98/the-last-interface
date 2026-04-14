@@ -1,7 +1,7 @@
 import { useChatStore } from '../../stores/useChatStore'
 import { resetChat } from '../../services/chat/index'
 import { getProviderName } from '../../services/ai/index'
-import { stop as stopTTS } from '../../services/tts'
+import { stop as stopTTS, speak as speakTTS } from '../../services/tts'
 
 export default function ChatHeader() {
   const close = useChatStore((s) => s.close)
@@ -10,12 +10,22 @@ export default function ChatHeader() {
 
   function handleModeSwitch() {
     stopTTS()
-    // When switching to text, disable voice so pending speakText calls won't play
     if (voiceMode) {
+      // Switching to TEXT — stop all audio, kill voice completely
       useChatStore.getState().setSpeaking(false)
       useChatStore.getState().setListening(false)
+      useChatStore.getState().setVoiceEnabled(false)
+      setVoiceMode(false)
+    } else {
+      // Switching to VOICE — enable and speak a short transition
+      setVoiceMode(true)
+      const messages = useChatStore.getState().messages
+      if (messages.length > 0) {
+        // Mid-conversation switch — say a short prompt
+        setTimeout(() => speakTTS("I'm here! Tap the mic to talk."), 300)
+      }
+      // If no messages, auto-greet in ChatWidget will fire
     }
-    setVoiceMode(!voiceMode)
   }
 
   function handleReset() {
