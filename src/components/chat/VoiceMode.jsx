@@ -37,7 +37,8 @@ export default function VoiceMode({ voice, onSend }) {
   // Non-product results come from separate store field
   const nonProductResults = latestNonProductResults || []
 
-  const hasProducts = products.length > 0
+  const hasCartUpdate = nonProductResults.some(r => r.type === 'cartUpdate')
+  const hasProducts = products.length > 0 && !hasCartUpdate  // Collapse showcase after add-to-cart
   const activeProduct = products[activeIndex] || null
   const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type))
 
@@ -179,10 +180,10 @@ export default function VoiceMode({ voice, onSend }) {
         </div>
       </div>
 
-      {/* Non-product results centered below orb */}
-      <div className="w-full max-w-sm">
+      {/* Non-product results centered below orb — more prominent */}
+      <div className="w-full max-w-md px-4">
         {nonProductResults.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3 animate-slide-up">
             {nonProductResults.map((r, i) => (
               <NonProductCard key={i} result={r} />
             ))}
@@ -328,12 +329,13 @@ function NonProductCard({ result }) {
 
   if (r.type === 'cartUpdate' && r.data?.product) {
     return (
-      <div className="bg-success/5 rounded-lg border border-success/20 p-3 text-xs">
-        <div className="flex gap-2 items-center">
-          <img src={r.data.product.image} alt="" className="w-8 h-8 rounded object-cover" />
-          <div>
-            <p className="text-stone-900 font-medium">{r.data.product.name}</p>
-            <p className="text-success">✓ Added to cart</p>
+      <div className="bg-success/5 rounded-xl border border-success/20 p-4">
+        <div className="flex gap-3 items-center">
+          <img src={r.data.product.image} alt="" className="w-14 h-14 rounded-lg object-cover" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-stone-900">{r.data.product.name}</p>
+            <p className="text-xs text-stone-500">Size {r.data.size}{r.data.color ? ` · ${r.data.color}` : ''} · ${r.data.product.price}</p>
+            <p className="text-xs text-success font-medium mt-1">✓ Added to cart</p>
           </div>
         </div>
       </div>
@@ -360,6 +362,45 @@ function NonProductCard({ result }) {
           {r.type === 'returnConfirmation' ? `Return #${r.data.returnId}` : `Exchange #${r.data.exchangeId}`}
         </p>
         <p className="text-stone-500 mt-1">{r.data.item?.name} — {r.type === 'returnConfirmation' ? `$${r.data.refundAmount?.toFixed(2)} refund` : `Size ${r.data.newSize}`}</p>
+      </div>
+    )
+  }
+
+  if (r.type === 'couponApplied' && r.data) {
+    return (
+      <div className="bg-success/5 rounded-lg border border-success/20 p-3 text-xs">
+        <div className="flex items-center gap-2 mb-2">
+          <svg className="w-4 h-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <span className="font-semibold text-success">Coupon Applied!</span>
+        </div>
+        <div className="flex justify-between mb-1">
+          <span className="text-stone-600">{r.data.code}</span>
+          <span className="text-success font-semibold">-${r.data.discountAmount.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between pt-1 border-t border-success/20">
+          <span className="text-stone-900 font-medium">New Total</span>
+          <span className="text-stone-900 font-semibold">${r.data.newTotal.toFixed(2)}</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (r.type === 'savedAddresses' && r.data?.addresses) {
+    return (
+      <div className="space-y-1.5">
+        <p className="text-[10px] text-stone-400 font-semibold uppercase tracking-wider">Ship to:</p>
+        {r.data.addresses.map((addr) => (
+          <button
+            key={addr.id}
+            onClick={() => sendChatMessage(`Ship to my ${addr.label.toLowerCase()}`)}
+            className="w-full text-left bg-white rounded-md border border-stone-200 p-2 hover:border-stone-400 transition-colors text-xs"
+          >
+            <p className="font-medium text-stone-900">{addr.label}</p>
+            <p className="text-stone-500">{addr.line1}</p>
+          </button>
+        ))}
       </div>
     )
   }

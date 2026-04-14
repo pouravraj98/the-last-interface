@@ -289,6 +289,7 @@ function OrderSummaryCard({ data }) {
         <div className="flex justify-between text-stone-500"><span>Subtotal</span><span>${data.subtotal.toFixed(2)}</span></div>
         <div className="flex justify-between text-stone-500"><span>{data.shippingMethod || 'Shipping'}</span><span>{data.shipping === 0 ? 'Free' : `$${data.shipping.toFixed(2)}`}</span></div>
         {data.shippingDescription && <div className="flex justify-between text-stone-400 text-[10px]"><span>Delivery</span><span>{data.shippingDescription}</span></div>}
+        {data.discount > 0 && <div className="flex justify-between text-success"><span>Discount ({data.couponCode})</span><span>-${data.discount.toFixed(2)}</span></div>}
         <div className="flex justify-between text-stone-500"><span>Tax</span><span>${data.tax.toFixed(2)}</span></div>
         <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-100"><span>Total</span><span>${data.total.toFixed(2)}</span></div>
       </div>
@@ -482,6 +483,21 @@ function CartUpdateCard({ data }) {
           </div>
         </div>
         <p className="text-xs text-success mt-2 font-medium">Added to cart</p>
+        {/* Quick action buttons */}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => sendChatMessage('Suggest something to go with what I just added')}
+            className="flex-1 text-[10px] px-2 py-1.5 rounded-md border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors"
+          >
+            Complete the look
+          </button>
+          <button
+            onClick={() => sendChatMessage("Let's check out")}
+            className="flex-1 text-[10px] px-2 py-1.5 rounded-md bg-stone-900 text-white hover:bg-stone-800 transition-colors"
+          >
+            Check out
+          </button>
+        </div>
       </div>
     )
   }
@@ -666,6 +682,61 @@ export default function ChatBubble({ message }) {
               <p className="text-xs text-info font-medium">We'll notify you at {useUserStore.getState().user.email} when it's back</p>
             </div>
           </div>
+        </div>
+      )
+
+    case 'couponApplied':
+      return (
+        <div className="animate-fade-in">
+          <div className="bg-success/5 rounded-lg border border-success/20 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              <span className="text-sm font-semibold text-success">Coupon Applied!</span>
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-stone-600">Code</span>
+                <span className="font-mono font-semibold text-stone-900">{msg.data.code}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-600">Discount</span>
+                <span className="text-success font-semibold">{msg.data.label}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-600">You save</span>
+                <span className="text-success font-semibold">-${msg.data.discountAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-success/20">
+                <span className="font-semibold text-stone-900">New Total</span>
+                <span className="font-semibold text-stone-900">${msg.data.newTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+
+    case 'savedAddresses':
+      return (
+        <div className="animate-fade-in space-y-2">
+          <p className="text-xs text-stone-400 font-semibold uppercase tracking-wider">Saved Addresses</p>
+          {msg.data.addresses.map((addr) => (
+            <button
+              key={addr.id}
+              onClick={() => sendChatMessage(`Ship to my ${addr.label.toLowerCase()}`)}
+              className="w-full text-left bg-white rounded-lg border border-stone-200 p-3 hover:border-stone-400 transition-colors"
+            >
+              <p className="text-xs font-medium text-stone-900">{addr.label} {addr.isDefault ? '(Default)' : ''}</p>
+              <p className="text-xs text-stone-500">{addr.line1}, {addr.city}, {addr.state} {addr.zip}</p>
+            </button>
+          ))}
+          <button
+            onClick={() => sendChatMessage('I want to ship to a different address')}
+            className="w-full text-left text-xs text-accent-500 font-medium hover:text-accent-400 py-1"
+          >
+            + Use a different address
+          </button>
         </div>
       )
 

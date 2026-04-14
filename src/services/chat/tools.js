@@ -203,6 +203,25 @@ export const tools = [
     },
   },
   {
+    name: 'apply_coupon',
+    description: 'Apply a coupon/discount code to the cart. Use during checkout to offer the customer a discount. Available codes: FORMA10 (10% off), FORMA15 (15% off orders over $100), WELCOME20 (20% off first order).',
+    parameters: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', description: 'Coupon code: FORMA10, FORMA15, or WELCOME20' },
+      },
+      required: ['code'],
+    },
+  },
+  {
+    name: 'show_saved_addresses',
+    description: 'Show all saved shipping addresses so the user can pick one during checkout. Use when asking where to ship.',
+    parameters: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
     name: 'save_address',
     description: 'Save a new shipping address when the user provides one that is not already saved. Parse the address from what the user typed.',
     parameters: {

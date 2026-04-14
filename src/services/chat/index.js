@@ -78,17 +78,34 @@ export async function sendChatMessage(text, image = null, options = {}) {
     )
     if (productToolResults.length > 0) {
       useChatStore.getState().setLatestResults(productToolResults)
+      // Clear non-product results when new products arrive (so cart update doesn't block showcase)
+      useChatStore.getState().setLatestNonProductResults([])
     }
     if (nonProductToolResults.length > 0) {
       useChatStore.getState().setLatestNonProductResults(nonProductToolResults)
     }
 
-    // 11. Fallback: if voice mode and AI showed products but gave no/minimal text, generate spoken description
+    // 11. Fallback: if voice mode and AI gave no/minimal text, generate spoken description
     if (voiceEnabled && toolResults.length > 0 && fullText.length < 20) {
+      // Cart update fallback
+      const cartUpdate = toolResults.find(r => r.type === 'cartUpdate' && r.data?.action === 'added')
+      if (cartUpdate?.data?.product) {
+        const p = cartUpdate.data.product
+        const category = p.category
+        const pairSuggestion = category === 'footwear' ? 'a top to go with those'
+          : category === 'tops' ? 'some bottoms to complete the look'
+          : category === 'dresses' ? 'shoes or a bag to match'
+          : category === 'bottoms' ? 'a shirt to pair with those'
+          : 'anything else'
+        fullText = `Done! I've added the ${p.name} in size ${cartUpdate.data.size} to your cart. Want me to suggest ${pairSuggestion}, or are you ready to check out?`
+        useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+      }
+
+      // Product results fallback
       const productResults = toolResults.filter(r =>
         r.type === 'productCard' || r.type === 'productCards' || r.type === 'productDetail'
       )
-      if (productResults.length > 0) {
+      if (!cartUpdate && productResults.length > 0) {
         const products = []
         for (const r of productResults) {
           if (r.type === 'productCards' && r.data.products) products.push(...r.data.products)

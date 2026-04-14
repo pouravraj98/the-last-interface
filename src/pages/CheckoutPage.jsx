@@ -7,6 +7,8 @@ import { useOrderStore } from '../stores/useOrderStore'
 export default function CheckoutPage() {
   const items = useCartStore((s) => s.items)
   const subtotal = useCartStore((s) => s.subtotal())
+  const discount = useCartStore((s) => s.discount())
+  const appliedCoupon = useCartStore((s) => s.appliedCoupon)
   const tax = useCartStore((s) => s.tax())
   const shipping = useCartStore((s) => s.shipping())
   const total = useCartStore((s) => s.total())
@@ -119,6 +121,11 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-stone-500">
                 <span>Shipping</span><span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-success text-xs">
+                  <span>Discount ({appliedCoupon?.code})</span><span>-${discount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-stone-500">
                 <span>Tax</span><span>${tax.toFixed(2)}</span>
               </div>

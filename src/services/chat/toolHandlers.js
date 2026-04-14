@@ -3,6 +3,7 @@
  * Runs OUTSIDE React — uses Zustand getState()/setState()
  */
 import { products, getProductByIndex } from '../../data/products'
+import { brand } from '../../config/brand'
 import { getReviewsForProduct, getReviewSummary } from '../../data/reviews'
 import { useCartStore } from '../../stores/useCartStore'
 import { useWishlistStore } from '../../stores/useWishlistStore'
@@ -63,6 +64,8 @@ export function handleToolCall(tool) {
         data: {
           items: cart.items,
           subtotal: cart.subtotal(),
+          discount: cart.discount(),
+          couponCode: cart.appliedCoupon?.code || null,
           tax: cart.tax(),
           shipping: cart.shipping(),
           shippingMethod: shippingOpt?.name || 'Standard',
@@ -90,7 +93,7 @@ export function handleToolCall(tool) {
 
     case 'process_order': {
       const cart = useCartStore.getState()
-      const orderId = useOrderStore.getState().placeOrder(cart.items, 'addr_home', 'pm_1', cart.selectedShipping)
+      const orderId = useOrderStore.getState().placeOrder(cart.items, 'addr_home', 'pm_1', cart.selectedShipping, cart.appliedCoupon)
       cart.clearCart()
       return { type: 'confirmation', data: { orderId } }
     }
@@ -183,6 +186,34 @@ export function handleToolCall(tool) {
       if (!product) return null
       useUserStore.getState().addNotify(product.id)
       return { type: 'notifyRestock', data: { product } }
+    }
+
+    case 'apply_coupon': {
+      const coupon = brand.coupons.find(c => c.code.toUpperCase() === args.code?.toUpperCase())
+      if (!coupon) return { type: 'ai', text: `Sorry, "${args.code}" isn't a valid coupon code.` }
+      const cart = useCartStore.getState()
+      if (coupon.minOrder > 0 && cart.subtotal() < coupon.minOrder) {
+        return { type: 'ai', text: `The ${coupon.code} code requires a minimum order of $${coupon.minOrder}. Your subtotal is $${cart.subtotal().toFixed(2)}.` }
+      }
+      if (coupon.firstOrderOnly && useOrderStore.getState().orders.length > 0) {
+        return { type: 'ai', text: `The ${coupon.code} code is only valid for first-time orders. Let me try FORMA10 for 10% off instead.` }
+      }
+      cart.applyCoupon(coupon)
+      const discountAmount = cart.discount()
+      return {
+        type: 'couponApplied',
+        data: {
+          code: coupon.code,
+          label: coupon.label,
+          discountAmount,
+          newTotal: cart.total(),
+        },
+      }
+    }
+
+    case 'show_saved_addresses': {
+      const addresses = useUserStore.getState().addresses
+      return { type: 'savedAddresses', data: { addresses } }
     }
 
     case 'save_address': {

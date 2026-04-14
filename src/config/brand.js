@@ -17,6 +17,12 @@ export const brand = {
     { id: 'nextday', name: 'Next Day Delivery', price: 14.95, days: [1, 1], freeAbove: null, description: 'Next business day, order by 2 PM', cutoff: '14:00' },
   ],
 
+  coupons: [
+    { code: 'FORMA10', type: 'percent', value: 0.10, label: '10% off', minOrder: 0 },
+    { code: 'FORMA15', type: 'percent', value: 0.15, label: '15% off', minOrder: 100 },
+    { code: 'WELCOME20', type: 'percent', value: 0.20, label: '20% off first order', minOrder: 0, firstOrderOnly: true },
+  ],
+
   returnPolicy: {
     window: 30,
     freeReturns: true,

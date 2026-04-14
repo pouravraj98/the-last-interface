@@ -73,13 +73,14 @@ export const useOrderStore = create((set, get) => ({
     },
   ],
 
-  placeOrder: (cartItems, addressId, paymentId, shippingMethod = 'standard') => {
+  placeOrder: (cartItems, addressId, paymentId, shippingMethod = 'standard', coupon = null) => {
     const orderId = `FM-${Math.floor(Math.random() * 9000) + 1000}`
     const subtotal = cartItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+    const discount = coupon ? Math.round(subtotal * coupon.value * 100) / 100 : 0
     const shippingOption = brand.shippingOptions.find(o => o.id === shippingMethod) || brand.shippingOptions[0]
-    const shippingCost = (shippingOption.freeAbove && subtotal >= shippingOption.freeAbove) ? 0 : shippingOption.price
-    const tax = subtotal * brand.taxRate
-    const total = Math.round((subtotal + tax + shippingCost) * 100) / 100
+    const shippingCost = (shippingOption.freeAbove && (subtotal - discount) >= shippingOption.freeAbove) ? 0 : shippingOption.price
+    const tax = (subtotal - discount) * brand.taxRate
+    const total = Math.round((subtotal - discount + tax + shippingCost) * 100) / 100
     const delivery = getDeliveryEstimate(shippingMethod)
 
     const newOrder = {
@@ -96,6 +97,8 @@ export const useOrderStore = create((set, get) => ({
       shippingMethod,
       shippingCost,
       subtotal,
+      discount,
+      couponCode: coupon?.code || null,
       tax: Math.round(tax * 100) / 100,
       total,
       createdAt: new Date().toISOString().split('T')[0],

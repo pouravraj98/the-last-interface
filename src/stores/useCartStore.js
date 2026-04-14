@@ -4,11 +4,17 @@ import { brand } from '../config/brand'
 export const useCartStore = create((set, get) => ({
   items: [],
   selectedShipping: 'standard',
+  appliedCoupon: null,
 
   // Computed
   itemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
   subtotal: () => get().items.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
-  tax: () => get().subtotal() * brand.taxRate,
+  discount: () => {
+    const coupon = get().appliedCoupon
+    if (!coupon) return 0
+    return Math.round(get().subtotal() * coupon.value * 100) / 100
+  },
+  tax: () => (get().subtotal() - get().discount()) * brand.taxRate,
   shipping: () => {
     const option = brand.shippingOptions.find(o => o.id === get().selectedShipping)
     if (!option) return 5.95
@@ -16,11 +22,13 @@ export const useCartStore = create((set, get) => ({
     if (option.freeAbove && get().subtotal() >= option.freeAbove) return 0
     return option.price
   },
-  total: () => get().subtotal() + get().tax() + get().shipping(),
+  total: () => get().subtotal() - get().discount() + get().tax() + get().shipping(),
   shippingOption: () => brand.shippingOptions.find(o => o.id === get().selectedShipping) || brand.shippingOptions[0],
 
   // Actions
   setShipping: (id) => set({ selectedShipping: id }),
+  applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
+  removeCoupon: () => set({ appliedCoupon: null }),
 
   addItem: (product, size, color = null, quantity = 1) => set((state) => {
     const existing = state.items.find(
@@ -52,5 +60,5 @@ export const useCartStore = create((set, get) => ({
         ),
   })),
 
-  clearCart: () => set({ items: [], selectedShipping: 'standard' }),
+  clearCart: () => set({ items: [], selectedShipping: 'standard', appliedCoupon: null }),
 }))
