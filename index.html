@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>the-last-interface</title>
+    <title>FORMA — The Last Interface</title>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Handle SPA redirect from 404.html
+      (function() {
+        var redirect = sessionStorage.getItem('spa-redirect');
+        if (redirect) {
+          sessionStorage.removeItem('spa-redirect');
+          window.history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
