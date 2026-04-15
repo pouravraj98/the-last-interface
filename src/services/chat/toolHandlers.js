@@ -77,11 +77,11 @@ export function handleToolCall(tool) {
 
     case 'show_address': {
       const addresses = useUserStore.getState().addresses
-      // Match by type/label — supports saved custom addresses too
       const addr = addresses.find((a) => a.label.toLowerCase() === args.type?.toLowerCase())
         || addresses.find((a) => a.label.toLowerCase().includes(args.type?.toLowerCase()))
         || addresses.find((a) => a.isDefault)
       if (!addr) return null
+      useChatStore.getState().setAddressSelected(addr.label)
       return { type: 'addressCard', data: { address: addr } }
     }
 
@@ -208,6 +208,7 @@ export function handleToolCall(tool) {
     case 'set_shipping': {
       const method = args.method || 'standard'
       useCartStore.getState().setShipping(method)
+      useChatStore.getState().setShippingExplicitlySet(true)
       const opt = useCartStore.getState().shippingOption()
       const newShipping = useCartStore.getState().shipping()
       return {
@@ -231,6 +232,7 @@ export function handleToolCall(tool) {
         return { type: 'ai', text: `The ${coupon.code} code is only valid for first-time orders. Let me try FORMA10 for 10% off instead.` }
       }
       cart.applyCoupon(coupon)
+      useChatStore.getState().setCouponOffered(true)
       const discountAmount = cart.discount()
       return {
         type: 'couponApplied',

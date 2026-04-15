@@ -16,6 +16,10 @@ export const useChatStore = create((set, get) => ({
   activeShowcaseIndex: 0,
   voiceTranscript: '',
   hasGreeted: false,
+  // Checkout tracking (context-driven, not rigid)
+  couponOffered: false,
+  addressSelected: null,
+  shippingExplicitlySet: false,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -40,6 +44,9 @@ export const useChatStore = create((set, get) => ({
   clearLatestResults: () => set({ latestResults: [], latestNonProductResults: [], activeShowcaseIndex: 0 }),
   setActiveShowcaseIndex: (idx) => set({ activeShowcaseIndex: idx }),
   setHasGreeted: (val) => set({ hasGreeted: val }),
+  setCouponOffered: (val) => set({ couponOffered: val }),
+  setAddressSelected: (val) => set({ addressSelected: val }),
+  setShippingExplicitlySet: (val) => set({ shippingExplicitlySet: val }),
 
   highlightProduct: (productId) => {
     set({ highlightedProductId: productId })
@@ -64,6 +71,9 @@ export const useChatStore = create((set, get) => ({
     highlightedProductId: null,
     navigateTo: null,
     hasGreeted: false,
+    couponOffered: false,
+    addressSelected: null,
+    shippingExplicitlySet: false,
     isListening: false,
     isSpeaking: false,
   }),
