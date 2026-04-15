@@ -104,6 +104,8 @@ export function handleToolCall(tool) {
       const orderId = useOrderStore.getState().placeOrder(cart.items, 'addr_home', 'pm_1', cart.selectedShipping, cart.appliedCoupon)
       const order = useOrderStore.getState().getOrder(orderId)
       cart.clearCart()
+      // Clear product showcase — order is done, no products to show
+      useChatStore.getState().setLatestResults([])
       return {
         type: 'confirmation',
         data: {

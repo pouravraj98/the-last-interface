@@ -89,51 +89,69 @@ export async function sendChatMessage(text, image = null, options = {}) {
       useChatStore.getState().setLatestNonProductResults(nonProductToolResults)
     }
 
-    // 11. Fallback: if voice mode and AI gave NO text, generate spoken description for key actions
-    const isVoice = useChatStore.getState().voiceMode
-    if (isVoice && toolResults.length > 0 && fullText.length < 5) {
-      // Cart update fallback — always speak this
-      const cartUpdate = toolResults.find(r => r.type === 'cartUpdate' && r.data?.action === 'added')
-      if (cartUpdate?.data?.product) {
-        const p = cartUpdate.data.product
-        const category = p.category
-        const pairSuggestion = category === 'footwear' ? 'a top to go with those'
-          : category === 'tops' ? 'some bottoms to complete the look'
-          : category === 'dresses' ? 'shoes or a bag to match'
-          : category === 'bottoms' ? 'a shirt to pair with those'
-          : 'anything else'
-        fullText = `Done! Added the ${p.name} size ${cartUpdate.data.size}. Want me to suggest ${pairSuggestion}, or check out?`
-        useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+    // 11. Fallback: if AI gave NO text with tool calls, generate conversational text
+    // Works in BOTH text and voice mode — cards should never appear without words
+    if (toolResults.length > 0 && fullText.length < 5) {
+      let fallback = ''
+
+      // Find what tools were called
+      const types = toolResults.map(r => r.type)
+
+      if (types.includes('cartUpdate')) {
+        const added = toolResults.find(r => r.type === 'cartUpdate' && r.data?.action === 'added')
+        const removed = toolResults.find(r => r.type === 'cartUpdate' && r.data?.action === 'removed')
+        if (added?.data?.product) {
+          const p = added.data.product
+          const pair = p.category === 'footwear' ? 'a top' : p.category === 'tops' ? 'some bottoms' : p.category === 'dresses' ? 'shoes or a bag' : 'something to go with it'
+          fallback = `Done, ${p.name} is in your cart! Want me to find ${pair} to match, or ready to check out?`
+        } else if (removed?.data?.product) {
+          fallback = `Removed the ${removed.data.product.name}. Anything else you want to change?`
+        } else {
+          fallback = 'Updated your cart!'
+        }
+      } else if (types.includes('allOrders')) {
+        fallback = "Here's what's going on with your orders!"
+      } else if (types.includes('orderStatus')) {
+        const order = toolResults.find(r => r.type === 'orderStatus')?.data?.order
+        fallback = order ? `Here's the latest on order ${order.id}!` : "Here's your order status!"
+      } else if (types.includes('orderSummary')) {
+        const summary = toolResults.find(r => r.type === 'orderSummary')?.data
+        fallback = summary ? `Your total comes to $${summary.total.toFixed(2)}. Where should I send it?` : "Here's your order summary!"
+      } else if (types.includes('couponApplied')) {
+        const coupon = toolResults.find(r => r.type === 'couponApplied')?.data
+        fallback = coupon ? `Nice, ${coupon.code} applied — you're saving $${coupon.discountAmount.toFixed(2)}!` : 'Coupon applied!'
+      } else if (types.includes('savedAddresses')) {
+        fallback = 'Which address works for you?'
+      } else if (types.includes('addressCard')) {
+        const addr = toolResults.find(r => r.type === 'addressCard')?.data?.address
+        fallback = addr ? `Sending it to ${addr.label}! Ready to confirm?` : 'Got the address!'
+      } else if (types.includes('addressSaved')) {
+        fallback = 'Saved that address for you!'
+      } else if (types.includes('paymentCard')) {
+        fallback = "I'll put it on your Visa ending 4242. Say confirm when you're ready!"
+      } else if (types.includes('confirmation')) {
+        const conf = toolResults.find(r => r.type === 'confirmation')?.data
+        fallback = conf ? `Order ${conf.orderId} confirmed! ${conf.estimatedDelivery ? `Arriving ${conf.estimatedDelivery}.` : ''} Enjoy!` : 'Order confirmed!'
+      } else if (types.includes('reviewCard')) {
+        fallback = "Here's what people are saying!"
+      } else if (types.includes('shippingUpdated')) {
+        const ship = toolResults.find(r => r.type === 'shippingUpdated')?.data
+        fallback = ship ? `Switched to ${ship.method}!` : 'Shipping updated!'
+      } else if (types.includes('productCard') || types.includes('productCards') || types.includes('productDetail')) {
+        fallback = 'Check this out!'
+      } else if (types.includes('notifyRestock')) {
+        fallback = "I'll let you know as soon as it's back!"
+      } else if (types.includes('wishlistUpdate')) {
+        fallback = 'Saved to your wishlist!'
+      } else if (types.includes('returnConfirmation')) {
+        fallback = "Return started — you'll get your refund soon!"
+      } else if (types.includes('exchangeConfirmation')) {
+        fallback = "Exchange set up — new size on the way!"
       }
 
-      // Checkout flow fallbacks — speak through each step
-      if (!cartUpdate) {
-        const orderSummary = toolResults.find(r => r.type === 'orderSummary')
-        const addressCard = toolResults.find(r => r.type === 'addressCard')
-        const paymentCard = toolResults.find(r => r.type === 'paymentCard')
-        const confirmation = toolResults.find(r => r.type === 'confirmation')
-        const couponApplied = toolResults.find(r => r.type === 'couponApplied')
-        const savedAddresses = toolResults.find(r => r.type === 'savedAddresses')
-
-        if (couponApplied?.data) {
-          fullText = `Great news! I've applied ${couponApplied.data.code} and you're saving ${couponApplied.data.discountAmount.toFixed(0)} dollars. Your new total is ${couponApplied.data.newTotal.toFixed(0)} dollars.`
-          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
-        } else if (orderSummary?.data) {
-          fullText = `Your order total is ${orderSummary.data.total.toFixed(0)} dollars. Where should I ship this?`
-          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
-        } else if (savedAddresses?.data) {
-          fullText = `I have your saved addresses. Which one should I ship to?`
-          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
-        } else if (addressCard?.data) {
-          fullText = `Shipping to ${addressCard.data.address.label}. I'll charge your Visa ending 4242. Ready to confirm?`
-          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
-        } else if (paymentCard?.data) {
-          fullText = `Charging your Visa ending 4242. Say confirm to place the order.`
-          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
-        } else if (confirmation?.data) {
-          fullText = `Your order ${confirmation.data.orderId} is confirmed! ${confirmation.data.estimatedDelivery ? `Arriving ${confirmation.data.estimatedDelivery}.` : ''} Thanks for shopping with FORMA!`
-          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
-        }
+      if (fallback) {
+        fullText = fallback
+        useChatStore.getState().addMessage({ type: 'ai', text: fallback })
       }
     }
 

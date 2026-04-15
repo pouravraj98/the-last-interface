@@ -40,11 +40,18 @@ export default function VoiceMode({ voice, onSend }) {
 
   const hasCartUpdate = nonProductResults.some(r => r.type === 'cartUpdate')
   const hasConfirmation = nonProductResults.some(r => r.type === 'confirmation')
+  const hasOrders = nonProductResults.some(r => r.type === 'allOrders' || r.type === 'orderStatus')
+  const hasPostAction = nonProductResults.some(r =>
+    r.type === 'notifyRestock' || r.type === 'returnConfirmation' ||
+    r.type === 'exchangeConfirmation' || r.type === 'addressSaved' || r.type === 'wishlistUpdate'
+  )
   // Clamp activeIndex to valid range
   const clampedIndex = Math.min(activeIndex, Math.max(0, products.length - 1))
   const activeProduct = products[clampedIndex] || null
-  const hasProducts = products.length > 0 && activeProduct && !hasCartUpdate && !hasConfirmation
-  const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type)) && !hasConfirmation
+  // Collapse showcase for: cart update, order confirmed, viewing orders, post-purchase actions
+  const shouldCollapseShowcase = hasCartUpdate || hasConfirmation || hasOrders || hasPostAction
+  const hasProducts = products.length > 0 && activeProduct && !shouldCollapseShowcase
+  const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type)) && !hasConfirmation && !hasOrders && !hasPostAction
 
   // Reset active index when products change
   useEffect(() => {

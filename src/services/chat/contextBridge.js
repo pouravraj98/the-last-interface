@@ -120,7 +120,7 @@ export function buildContextString() {
         lines.push(`  ✓ Coupon: Offered but declined`)
       }
     } else {
-      lines.push(`  ✗ Coupon: NOT offered yet — offer when the moment feels right`)
+      lines.push(`  ✗ Coupon: NOT offered yet — YOU MUST offer a discount! Say something like "Oh hey, I can throw in 10% off with FORMA10 — want it?"`)
     }
 
     lines.push(`  ✓ Payment: Visa ····4242 on file`)
