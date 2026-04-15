@@ -52,16 +52,20 @@ export function buildContextString() {
     lines.push(`- Page: ${pageCtx.currentPage}`)
   }
 
-  // Cart awareness
+  // Cart awareness — detailed so AI knows exactly what to remove
   const items = cart.items
   if (items.length > 0) {
     const cartTotal = cart.subtotal()
     lines.push(`- Cart: ${items.length} item(s), $${cartTotal.toFixed(2)} subtotal`)
     items.forEach((item) => {
-      lines.push(`  · ${item.product.name} (Size ${item.size}${item.color ? ', ' + item.color : ''}) × ${item.quantity} — $${(item.product.price * item.quantity).toFixed(2)}`)
+      lines.push(`  · product_id="${item.productId}", ${item.product.name}, Size ${item.size}${item.color ? ', Color ' + item.color : ''}, Qty ${item.quantity}, $${(item.product.price * item.quantity).toFixed(2)}`)
     })
+    lines.push(`  To remove an item, use remove_from_cart with the exact product_id and size shown above.`)
+    if (cart.appliedCoupon) {
+      lines.push(`  Applied coupon: ${cart.appliedCoupon.code} (${cart.appliedCoupon.label})`)
+    }
   } else {
-    lines.push('- Cart: Empty')
+    lines.push('- Cart: Empty — nothing to check out. Suggest products first.')
   }
 
   // Wishlist

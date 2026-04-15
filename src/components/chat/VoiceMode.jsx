@@ -8,12 +8,13 @@
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useChatStore } from '../../stores/useChatStore'
+import { useCartStore } from '../../stores/useCartStore'
 import { sendChatMessage } from '../../services/chat/index'
 import VoiceOrb from './VoiceOrb'
 import VoiceProductShowcase from './VoiceProductShowcase'
 
 // Result types that indicate checkout (pause auto-listen)
-const CHECKOUT_TYPES = ['orderSummary', 'addressCard', 'paymentCard', 'confirmation']
+const CHECKOUT_TYPES = ['orderSummary', 'addressCard', 'paymentCard', 'confirmation', 'shippingUpdated', 'couponApplied', 'savedAddresses']
 
 export default function VoiceMode({ voice, onSend }) {
   const isTyping = useChatStore((s) => s.isTyping)
@@ -38,9 +39,10 @@ export default function VoiceMode({ voice, onSend }) {
   const nonProductResults = latestNonProductResults || []
 
   const hasCartUpdate = nonProductResults.some(r => r.type === 'cartUpdate')
-  const hasProducts = products.length > 0 && !hasCartUpdate  // Collapse showcase after add-to-cart
+  const hasConfirmation = nonProductResults.some(r => r.type === 'confirmation')
+  const hasProducts = products.length > 0 && !hasCartUpdate && !hasConfirmation  // Collapse after cart add or order confirm
   const activeProduct = products[activeIndex] || null
-  const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type))
+  const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type)) && !hasConfirmation
 
   // Reset active index when products change
   useEffect(() => {
@@ -112,14 +114,18 @@ export default function VoiceMode({ voice, onSend }) {
   if (hasProducts) {
     return (
       <div className="flex-1 flex overflow-hidden">
-        {/* Left: Product showcase */}
+        {/* Left: Product showcase OR compact checkout overview */}
         <div className="w-[55%] border-r border-stone-100 overflow-y-auto">
-          <VoiceProductShowcase
-            product={activeProduct}
-            productList={products}
-            activeIndex={activeIndex}
-            onNavigate={handleProductNavigate}
-          />
+          {isCheckout ? (
+            <CheckoutOverviewPanel />
+          ) : (
+            <VoiceProductShowcase
+              product={activeProduct}
+              productList={products}
+              activeIndex={activeIndex}
+              onNavigate={handleProductNavigate}
+            />
+          )}
         </div>
 
         {/* Right: Voice panel */}
@@ -189,6 +195,68 @@ export default function VoiceMode({ voice, onSend }) {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+/** Checkout left panel — order review with full item details */
+function CheckoutOverviewPanel() {
+  const cartItems = useCartStore((s) => s.items)
+  const subtotal = useCartStore((s) => s.subtotal())
+  const discount = useCartStore((s) => s.discount())
+  const coupon = useCartStore((s) => s.appliedCoupon)
+  const tax = useCartStore((s) => s.tax())
+  const shipping = useCartStore((s) => s.shipping())
+  const total = useCartStore((s) => s.total())
+  const shippingOpt = useCartStore((s) => s.shippingOption())
+
+  return (
+    <div className="p-4 h-full overflow-y-auto">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-4">Order Review</p>
+
+      {/* Cart items */}
+      <div className="space-y-4 mb-6">
+        {cartItems.map((item, i) => (
+          <div key={i} className="flex gap-3">
+            <img src={item.product.image} alt={item.product.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-stone-900">{item.product.name}</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                <span className="text-xs text-stone-500">Size: <span className="text-stone-700 font-medium">{item.size}</span></span>
+                {item.color && <span className="text-xs text-stone-500">Color: <span className="text-stone-700 font-medium">{item.color}</span></span>}
+                <span className="text-xs text-stone-500">Qty: <span className="text-stone-700 font-medium">{item.quantity}</span></span>
+              </div>
+              <p className="text-sm font-semibold text-stone-900 mt-1">${(item.product.price * item.quantity).toFixed(2)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Summary */}
+      <div className="border-t border-stone-200 pt-4 space-y-2 text-xs">
+        <div className="flex justify-between text-stone-500">
+          <span>Subtotal</span>
+          <span>${subtotal.toFixed(2)}</span>
+        </div>
+        {discount > 0 && (
+          <div className="flex justify-between text-success font-medium">
+            <span>Discount ({coupon?.code})</span>
+            <span>-${discount.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-stone-500">
+          <span>{shippingOpt?.name || 'Shipping'}</span>
+          <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+        </div>
+        <div className="flex justify-between text-stone-500">
+          <span>Tax</span>
+          <span>${tax.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between text-stone-900 font-bold text-sm pt-2 border-t border-stone-200">
+          <span>Total</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
       </div>
     </div>
   )
@@ -315,14 +383,42 @@ function NonProductCard({ result }) {
 
   if (r.type === 'confirmation') {
     return (
-      <div className="bg-success/5 rounded-lg border border-success/20 p-4 text-center">
-        <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2">
-          <svg className="w-4 h-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-          </svg>
+      <div className="bg-success/5 rounded-xl border border-success/20 p-4">
+        <div className="text-center mb-3">
+          <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2">
+            <svg className="w-4 h-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-stone-900">Order Confirmed!</p>
+          <p className="text-[10px] text-stone-500">#{r.data.orderId}</p>
         </div>
-        <p className="text-sm font-semibold text-stone-900">Order Confirmed!</p>
-        <p className="text-xs text-stone-500">#{r.data.orderId}</p>
+        <div className="space-y-1 text-xs">
+          {r.data.couponCode && (
+            <div className="flex justify-between text-success">
+              <span>Discount ({r.data.couponCode})</span>
+              <span>-${r.data.discount?.toFixed(2)}</span>
+            </div>
+          )}
+          {r.data.total && (
+            <div className="flex justify-between text-stone-900 font-semibold">
+              <span>Total</span>
+              <span>${r.data.total?.toFixed(2)}</span>
+            </div>
+          )}
+          {r.data.shippingMethod && (
+            <div className="flex justify-between text-stone-500">
+              <span>Shipping</span>
+              <span>{r.data.shippingMethod}</span>
+            </div>
+          )}
+          {r.data.estimatedDelivery && (
+            <div className="flex justify-between text-stone-500">
+              <span>Delivery</span>
+              <span>{r.data.estimatedDelivery}</span>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -362,6 +458,15 @@ function NonProductCard({ result }) {
           {r.type === 'returnConfirmation' ? `Return #${r.data.returnId}` : `Exchange #${r.data.exchangeId}`}
         </p>
         <p className="text-stone-500 mt-1">{r.data.item?.name} — {r.type === 'returnConfirmation' ? `$${r.data.refundAmount?.toFixed(2)} refund` : `Size ${r.data.newSize}`}</p>
+      </div>
+    )
+  }
+
+  if (r.type === 'shippingUpdated' && r.data) {
+    return (
+      <div className="bg-info/5 rounded-lg border border-info/20 p-3 text-xs">
+        <p className="text-info font-medium">{r.data.method}</p>
+        <p className="text-stone-500">{r.data.cost === 0 ? 'Free' : `$${r.data.cost.toFixed(2)}`} · {r.data.description}</p>
       </div>
     )
   }

@@ -331,15 +331,53 @@ function PaymentCard({ payment }) {
 
 function ConfirmationCard({ data }) {
   return (
-    <div className="bg-success/5 rounded-lg border border-success/20 p-4 text-center">
-      <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
-        <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-        </svg>
+    <div className="bg-success/5 rounded-lg border border-success/20 p-4">
+      <div className="text-center mb-4">
+        <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2">
+          <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+          </svg>
+        </div>
+        <p className="text-sm font-semibold text-stone-900">Order Confirmed!</p>
+        <p className="text-xs text-stone-500">Order #{data.orderId}</p>
       </div>
-      <p className="text-sm font-semibold text-stone-900">Order Confirmed!</p>
-      <p className="text-xs text-stone-500 mt-1">Order #{data.orderId}</p>
-      <p className="text-xs text-stone-400 mt-2">You'll receive a confirmation email shortly.</p>
+      {data.items && data.items.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {data.items.map((item, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              {item.image && <img src={item.image} alt="" className="w-10 h-10 rounded object-cover" />}
+              <div>
+                <p className="text-xs font-medium text-stone-900">{item.name}</p>
+                <p className="text-[10px] text-stone-400">Size {item.size}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="border-t border-success/20 pt-3 space-y-1.5 text-xs">
+        {data.couponCode && (
+          <div className="flex justify-between text-success">
+            <span>Discount ({data.couponCode})</span>
+            <span>-${data.discount?.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-stone-900 font-semibold">
+          <span>Total</span>
+          <span>${data.total?.toFixed(2)}</span>
+        </div>
+        {data.shippingMethod && (
+          <div className="flex justify-between text-stone-500">
+            <span>Shipping</span>
+            <span>{data.shippingMethod}</span>
+          </div>
+        )}
+        {data.estimatedDelivery && (
+          <div className="flex justify-between text-stone-500">
+            <span>Delivery</span>
+            <span>{data.estimatedDelivery}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -682,6 +720,18 @@ export default function ChatBubble({ message }) {
               <p className="text-xs text-info font-medium">We'll notify you at {useUserStore.getState().user.email} when it's back</p>
             </div>
           </div>
+        </div>
+      )
+
+    case 'shippingUpdated':
+      return (
+        <div className="animate-fade-in rounded-lg border border-info/20 bg-info/5 p-3 text-sm">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0H6.375c-.621 0-1.125-.504-1.125-1.125V14.25m0 0h11.25m0 0V11.625m0 2.625H5.25m11.25 0V4.875c0-.621-.504-1.125-1.125-1.125H5.25" /></svg>
+            <span className="text-info font-medium">{msg.data.method}</span>
+            <span className="text-stone-500">— {msg.data.cost === 0 ? 'Free' : `$${msg.data.cost.toFixed(2)}`}</span>
+          </div>
+          {msg.data.description && <p className="text-xs text-stone-400 mt-1 ml-6">{msg.data.description}</p>}
         </div>
       )
 

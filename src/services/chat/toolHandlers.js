@@ -93,9 +93,26 @@ export function handleToolCall(tool) {
 
     case 'process_order': {
       const cart = useCartStore.getState()
+      const shippingOpt = cart.shippingOption()
+      const items = cart.items.map(i => ({ name: i.product.name, size: i.size, image: i.product.image }))
+      const total = cart.total()
+      const couponCode = cart.appliedCoupon?.code || null
+      const discount = cart.discount()
       const orderId = useOrderStore.getState().placeOrder(cart.items, 'addr_home', 'pm_1', cart.selectedShipping, cart.appliedCoupon)
+      const order = useOrderStore.getState().getOrder(orderId)
       cart.clearCart()
-      return { type: 'confirmation', data: { orderId } }
+      return {
+        type: 'confirmation',
+        data: {
+          orderId,
+          items,
+          total,
+          couponCode,
+          discount,
+          shippingMethod: shippingOpt?.name || 'Standard',
+          estimatedDelivery: order?.estimatedDelivery || '',
+        },
+      }
     }
 
     case 'show_order_status': {
@@ -186,6 +203,21 @@ export function handleToolCall(tool) {
       if (!product) return null
       useUserStore.getState().addNotify(product.id)
       return { type: 'notifyRestock', data: { product } }
+    }
+
+    case 'set_shipping': {
+      const method = args.method || 'standard'
+      useCartStore.getState().setShipping(method)
+      const opt = useCartStore.getState().shippingOption()
+      const newShipping = useCartStore.getState().shipping()
+      return {
+        type: 'shippingUpdated',
+        data: {
+          method: opt?.name || 'Standard',
+          cost: newShipping,
+          description: opt?.description || '',
+        },
+      }
     }
 
     case 'apply_coupon': {

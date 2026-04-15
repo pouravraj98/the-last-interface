@@ -203,6 +203,17 @@ export const tools = [
     },
   },
   {
+    name: 'set_shipping',
+    description: 'Set the shipping speed for the order. Call this when user selects a shipping option during checkout.',
+    parameters: {
+      type: 'object',
+      properties: {
+        method: { type: 'string', enum: ['standard', 'express', 'nextday'], description: 'Shipping method: standard, express, or nextday' },
+      },
+      required: ['method'],
+    },
+  },
+  {
     name: 'apply_coupon',
     description: 'Apply a coupon/discount code to the cart. Use during checkout to offer the customer a discount. Available codes: FORMA10 (10% off), FORMA15 (15% off orders over $100), WELCOME20 (20% off first order).',
     parameters: {

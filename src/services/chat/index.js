@@ -85,8 +85,9 @@ export async function sendChatMessage(text, image = null, options = {}) {
       useChatStore.getState().setLatestNonProductResults(nonProductToolResults)
     }
 
-    // 11. Fallback: if voice mode and AI gave no/minimal text, generate spoken description
-    if (voiceEnabled && toolResults.length > 0 && fullText.length < 20) {
+    // 11. Fallback: if voice mode and AI gave NO text at all, generate spoken description
+    const isVoice = useChatStore.getState().voiceMode
+    if (isVoice && toolResults.length > 0 && fullText.length < 5) {
       // Cart update fallback
       const cartUpdate = toolResults.find(r => r.type === 'cartUpdate' && r.data?.action === 'added')
       if (cartUpdate?.data?.product) {
@@ -117,6 +118,36 @@ export async function sendChatMessage(text, image = null, options = {}) {
             : `I found ${products.length} options for you. ${products.slice(0, 3).map(p => `The ${p.name} at ${p.price} dollars`).join(', and ')}. Which one catches your eye?`
           fullText = desc
           useChatStore.getState().addMessage({ type: 'ai', text: desc })
+        }
+      }
+
+      // Checkout flow fallbacks — speak through each step
+      if (!cartUpdate && productResults.length === 0) {
+        const orderSummary = toolResults.find(r => r.type === 'orderSummary')
+        const addressCard = toolResults.find(r => r.type === 'addressCard')
+        const paymentCard = toolResults.find(r => r.type === 'paymentCard')
+        const confirmation = toolResults.find(r => r.type === 'confirmation')
+        const couponApplied = toolResults.find(r => r.type === 'couponApplied')
+        const savedAddresses = toolResults.find(r => r.type === 'savedAddresses')
+
+        if (couponApplied?.data) {
+          fullText = `Great news! I've applied ${couponApplied.data.code} and you're saving ${couponApplied.data.discountAmount.toFixed(0)} dollars. Your new total is ${couponApplied.data.newTotal.toFixed(0)} dollars.`
+          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+        } else if (orderSummary?.data) {
+          fullText = `Your order total is ${orderSummary.data.total.toFixed(0)} dollars. Where should I ship this?`
+          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+        } else if (savedAddresses?.data) {
+          fullText = `I have your saved addresses. Which one should I ship to?`
+          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+        } else if (addressCard?.data) {
+          fullText = `Shipping to ${addressCard.data.address.label}. I'll charge your Visa ending 4242. Ready to confirm?`
+          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+        } else if (paymentCard?.data) {
+          fullText = `Charging your Visa ending 4242. Say confirm to place the order.`
+          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
+        } else if (confirmation?.data) {
+          fullText = `Your order ${confirmation.data.orderId} is confirmed! ${confirmation.data.estimatedDelivery ? `Arriving ${confirmation.data.estimatedDelivery}.` : ''} Thanks for shopping with FORMA!`
+          useChatStore.getState().addMessage({ type: 'ai', text: fullText })
         }
       }
     }

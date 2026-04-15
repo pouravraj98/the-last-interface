@@ -20,7 +20,7 @@ export async function speak(text, options = {}) {
     }
   }
 
-  // Try OpenAI TTS
+  // Try OpenAI TTS second
   if (aiConfig.keys.openai) {
     try {
       return await speakOpenAI(text)
@@ -29,7 +29,7 @@ export async function speak(text, options = {}) {
     }
   }
 
-  // Browser fallback
+  // Browser fallback (last resort)
   return speakBrowser(text)
 }
 
