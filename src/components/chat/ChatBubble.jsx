@@ -541,8 +541,15 @@ function CartUpdateCard({ data }) {
   }
 
   return (
-    <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-      Removed item from cart
+    <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
+      <div className="flex gap-3 items-center">
+        {data.product?.image && <img src={data.product.image} alt="" className="w-10 h-10 rounded-md object-cover shrink-0 opacity-50" />}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-stone-500 line-through">{data.product?.name || 'Item'}</p>
+          {data.size && <p className="text-xs text-stone-400">Size {data.size}</p>}
+        </div>
+        <span className="text-xs text-stone-400">Removed</span>
+      </div>
     </div>
   )
 }
@@ -572,8 +579,15 @@ export default function ChatBubble({ message }) {
     case 'user':
       return (
         <div className="flex justify-end animate-fade-in">
-          <div className="max-w-[85%] bg-stone-900 rounded-2xl rounded-br-sm px-4 py-2.5">
-            <p className="text-sm text-white leading-relaxed">{msg.text}</p>
+          <div className="max-w-[85%]">
+            {msg.image && (
+              <div className="mb-1 flex justify-end">
+                <img src={msg.image} alt="Uploaded" className="max-w-[200px] max-h-[200px] rounded-xl object-cover" />
+              </div>
+            )}
+            <div className="bg-stone-900 rounded-2xl rounded-br-sm px-4 py-2.5">
+              <p className="text-sm text-white leading-relaxed">{msg.text}</p>
+            </div>
           </div>
         </div>
       )

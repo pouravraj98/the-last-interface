@@ -66,11 +66,11 @@ export default function ChatWidget() {
         const category = usePageContextStore.getState().viewingCategory
         let greeting
         if (viewingProduct) {
-          greeting = `Greet me briefly and tell me about the ${viewingProduct.name}`
+          greeting = `Say hi casually about the ${viewingProduct.name} I'm looking at and SHOW it using show_product_detail tool. One friendly sentence plus the tool call.`
         } else if (category) {
-          greeting = `Greet me briefly. I'm browsing ${category}.`
+          greeting = `Say hi casually — I'm browsing ${category}. One sentence, friendly.`
         } else {
-          greeting = `Greet me briefly and ask what I'm looking for.`
+          greeting = `Say hi like a friend walking up in a store. One short warm sentence. Don't list what you can do.`
         }
         sendChatMessage(greeting, null, { hidden: true }).then((text) => {
           if (text) voice.speakText(text)

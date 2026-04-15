@@ -19,7 +19,11 @@ export async function sendChatMessage(text, image = null, options = {}) {
 
   // 1. Add user message to UI (skip if hidden — used for auto-greet)
   if (!options.hidden) {
-    store.addMessage({ type: 'user', text, image: image ? true : false })
+    store.addMessage({
+      type: 'user',
+      text,
+      image: image ? `data:${image.mimeType || 'image/jpeg'};base64,${image.base64}` : null,
+    })
   }
 
   // 2. Format and push to conversation history
@@ -85,10 +89,10 @@ export async function sendChatMessage(text, image = null, options = {}) {
       useChatStore.getState().setLatestNonProductResults(nonProductToolResults)
     }
 
-    // 11. Fallback: if voice mode and AI gave NO text at all, generate spoken description
+    // 11. Fallback: if voice mode and AI gave NO text, generate spoken description for key actions
     const isVoice = useChatStore.getState().voiceMode
     if (isVoice && toolResults.length > 0 && fullText.length < 5) {
-      // Cart update fallback
+      // Cart update fallback — always speak this
       const cartUpdate = toolResults.find(r => r.type === 'cartUpdate' && r.data?.action === 'added')
       if (cartUpdate?.data?.product) {
         const p = cartUpdate.data.product
@@ -98,31 +102,12 @@ export async function sendChatMessage(text, image = null, options = {}) {
           : category === 'dresses' ? 'shoes or a bag to match'
           : category === 'bottoms' ? 'a shirt to pair with those'
           : 'anything else'
-        fullText = `Done! I've added the ${p.name} in size ${cartUpdate.data.size} to your cart. Want me to suggest ${pairSuggestion}, or are you ready to check out?`
+        fullText = `Done! Added the ${p.name} size ${cartUpdate.data.size}. Want me to suggest ${pairSuggestion}, or check out?`
         useChatStore.getState().addMessage({ type: 'ai', text: fullText })
       }
 
-      // Product results fallback
-      const productResults = toolResults.filter(r =>
-        r.type === 'productCard' || r.type === 'productCards' || r.type === 'productDetail'
-      )
-      if (!cartUpdate && productResults.length > 0) {
-        const products = []
-        for (const r of productResults) {
-          if (r.type === 'productCards' && r.data.products) products.push(...r.data.products)
-          else if (r.data?.product) products.push(r.data.product)
-        }
-        if (products.length > 0) {
-          const desc = products.length === 1
-            ? `Here's what I found — the ${products[0].name} at ${products[0].price} dollars. ${products[0].description} Want to know more or add it to your cart?`
-            : `I found ${products.length} options for you. ${products.slice(0, 3).map(p => `The ${p.name} at ${p.price} dollars`).join(', and ')}. Which one catches your eye?`
-          fullText = desc
-          useChatStore.getState().addMessage({ type: 'ai', text: desc })
-        }
-      }
-
       // Checkout flow fallbacks — speak through each step
-      if (!cartUpdate && productResults.length === 0) {
+      if (!cartUpdate) {
         const orderSummary = toolResults.find(r => r.type === 'orderSummary')
         const addressCard = toolResults.find(r => r.type === 'addressCard')
         const paymentCard = toolResults.find(r => r.type === 'paymentCard')

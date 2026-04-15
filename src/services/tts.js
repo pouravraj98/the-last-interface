@@ -1,14 +1,19 @@
 /**
  * Text-to-Speech Service
  * Priority: ElevenLabs → OpenAI TTS → Browser fallback
+ * All audio tracked for guaranteed cleanup on stop()
  */
 import { aiConfig } from '../config/ai'
 
-let currentAudio = null
+// Track ALL active audio elements so stop() kills everything
+const activeAudios = new Set()
 let playing = false
+let currentResolve = null
 
 export async function speak(text, options = {}) {
   if (!text?.trim()) return
+
+  // ALWAYS stop everything before starting new speech
   stop()
 
   // Try ElevenLabs first
@@ -43,14 +48,19 @@ async function speakElevenLabs(text) {
     headers: { 'Content-Type': 'application/json', 'xi-api-key': key },
     body: JSON.stringify({
       text,
-      model_id: 'eleven_flash_v2_5',
-      voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3 },
+      model_id: 'eleven_turbo_v2_5',
+      voice_settings: { stability: 0.5, similarity_boost: 0.85, style: 0.4 },
     }),
   })
 
-  if (!res.ok) throw new Error(`ElevenLabs ${res.status}`)
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`ElevenLabs ${res.status}: ${errText.substring(0, 100)}`)
+  }
 
   const blob = await res.blob()
+  // Verify it's actual audio, not an error response
+  if (blob.size < 100) throw new Error('ElevenLabs returned empty/tiny response')
   return playBlob(blob)
 }
 
@@ -73,33 +83,38 @@ async function speakOpenAI(text) {
     }),
   })
 
-  if (!res.ok) throw new Error(`OpenAI TTS ${res.status}`)
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`OpenAI TTS ${res.status}: ${errText.substring(0, 100)}`)
+  }
 
   const blob = await res.blob()
+  if (blob.size < 100) throw new Error('OpenAI TTS returned empty response')
   return playBlob(blob)
 }
 
-/** Play an audio blob */
+/** Play an audio blob — tracked for cleanup */
 function playBlob(blob) {
   const url = URL.createObjectURL(blob)
+  const audio = new Audio(url)
+
+  // Track this audio element
+  activeAudios.add(audio)
+
   return new Promise((resolve) => {
-    currentAudio = new Audio(url)
-    currentAudio.onended = () => {
+    currentResolve = resolve
+
+    const cleanup = () => {
       playing = false
+      activeAudios.delete(audio)
       URL.revokeObjectURL(url)
-      currentAudio = null
+      currentResolve = null
       resolve()
     }
-    currentAudio.onerror = () => {
-      playing = false
-      URL.revokeObjectURL(url)
-      currentAudio = null
-      resolve()
-    }
-    currentAudio.play().catch(() => {
-      playing = false
-      resolve()
-    })
+
+    audio.onended = cleanup
+    audio.onerror = cleanup
+    audio.play().catch(cleanup)
   })
 }
 
@@ -108,24 +123,39 @@ function speakBrowser(text) {
   if (!window.speechSynthesis) return Promise.resolve()
   playing = true
   return new Promise((resolve) => {
+    currentResolve = resolve
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = 1.0
     utterance.pitch = 1.0
-    utterance.onend = () => { playing = false; resolve() }
-    utterance.onerror = () => { playing = false; resolve() }
+    utterance.onend = () => { playing = false; currentResolve = null; resolve() }
+    utterance.onerror = () => { playing = false; currentResolve = null; resolve() }
     window.speechSynthesis.speak(utterance)
   })
 }
 
+/** Stop ALL audio immediately — no orphaned audio elements */
 export function stop() {
-  if (currentAudio) {
-    currentAudio.pause()
-    currentAudio.currentTime = 0
-    currentAudio = null
+  // Kill every tracked audio element
+  for (const audio of activeAudios) {
+    try {
+      audio.pause()
+      audio.currentTime = 0
+      audio.src = ''
+    } catch (e) {}
   }
+  activeAudios.clear()
+
+  // Kill browser speech
   if (window.speechSynthesis) {
     window.speechSynthesis.cancel()
   }
+
+  // Resolve any pending promise so speakText doesn't hang
+  if (currentResolve) {
+    currentResolve()
+    currentResolve = null
+  }
+
   playing = false
 }
 

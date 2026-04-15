@@ -9,6 +9,7 @@ import { useUserStore } from '../../stores/useUserStore'
 import { sendChatMessage } from '../../services/chat/index'
 
 function getPreferredSize(product) {
+  if (!product) return null
   const user = useUserStore.getState().user
   if (product.category === 'footwear') return user.shoeSize
   if (product.category === 'tops' || product.category === 'outerwear' || product.category === 'dresses') return user.clothingSize
@@ -17,6 +18,8 @@ function getPreferredSize(product) {
 }
 
 export default function VoiceProductShowcase({ product, productList, activeIndex, onNavigate }) {
+  if (!product) return <div className="flex-1 flex items-center justify-center p-4 text-stone-400 text-sm">Loading product...</div>
+
   const preferred = getPreferredSize(product)
   const preferredAvail = preferred && product.sizes?.includes(preferred) && (product.sizeStock ? product.sizeStock[preferred] !== false : true)
   const defaultSize = preferredAvail ? preferred : null

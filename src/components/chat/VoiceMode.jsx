@@ -40,8 +40,10 @@ export default function VoiceMode({ voice, onSend }) {
 
   const hasCartUpdate = nonProductResults.some(r => r.type === 'cartUpdate')
   const hasConfirmation = nonProductResults.some(r => r.type === 'confirmation')
-  const hasProducts = products.length > 0 && !hasCartUpdate && !hasConfirmation  // Collapse after cart add or order confirm
-  const activeProduct = products[activeIndex] || null
+  // Clamp activeIndex to valid range
+  const clampedIndex = Math.min(activeIndex, Math.max(0, products.length - 1))
+  const activeProduct = products[clampedIndex] || null
+  const hasProducts = products.length > 0 && activeProduct && !hasCartUpdate && !hasConfirmation
   const isCheckout = nonProductResults.some(r => CHECKOUT_TYPES.includes(r.type)) && !hasConfirmation
 
   // Reset active index when products change
@@ -423,7 +425,7 @@ function NonProductCard({ result }) {
     )
   }
 
-  if (r.type === 'cartUpdate' && r.data?.product) {
+  if (r.type === 'cartUpdate' && r.data?.action === 'added' && r.data?.product) {
     return (
       <div className="bg-success/5 rounded-xl border border-success/20 p-4">
         <div className="flex gap-3 items-center">
@@ -433,6 +435,21 @@ function NonProductCard({ result }) {
             <p className="text-xs text-stone-500">Size {r.data.size}{r.data.color ? ` · ${r.data.color}` : ''} · ${r.data.product.price}</p>
             <p className="text-xs text-success font-medium mt-1">✓ Added to cart</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (r.type === 'cartUpdate' && r.data?.action === 'removed') {
+    return (
+      <div className="bg-stone-50 rounded-lg border border-stone-200 p-3">
+        <div className="flex gap-3 items-center">
+          {r.data.product?.image && <img src={r.data.product.image} alt="" className="w-10 h-10 rounded-md object-cover opacity-50" />}
+          <div className="flex-1">
+            <p className="text-xs text-stone-500 line-through">{r.data.product?.name || 'Item'}</p>
+            {r.data.size && <p className="text-[10px] text-stone-400">Size {r.data.size}</p>}
+          </div>
+          <span className="text-[10px] text-stone-400">Removed</span>
         </div>
       </div>
     )
@@ -451,13 +468,61 @@ function NonProductCard({ result }) {
     )
   }
 
-  if (r.type === 'returnConfirmation' || r.type === 'exchangeConfirmation') {
+  if (r.type === 'returnConfirmation') {
     return (
-      <div className="bg-white rounded-lg border border-stone-200 p-3 text-xs">
-        <p className="text-stone-900 font-medium">
-          {r.type === 'returnConfirmation' ? `Return #${r.data.returnId}` : `Exchange #${r.data.exchangeId}`}
-        </p>
-        <p className="text-stone-500 mt-1">{r.data.item?.name} — {r.type === 'returnConfirmation' ? `$${r.data.refundAmount?.toFixed(2)} refund` : `Size ${r.data.newSize}`}</p>
+      <div className="bg-white rounded-lg border border-stone-200 p-3 text-xs max-h-[250px] overflow-y-auto">
+        <div className="flex items-center gap-2 mb-2">
+          <svg className="w-4 h-4 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+          <span className="font-semibold text-stone-500 uppercase tracking-wider">Return</span>
+        </div>
+        <div className="flex gap-2 items-center mb-2">
+          {r.data.item?.image && <img src={r.data.item.image} alt="" className="w-10 h-10 rounded object-cover" />}
+          <div>
+            <p className="font-medium text-stone-900">{r.data.item?.name}</p>
+            <p className="text-stone-400">Size {r.data.item?.size} · Order #{r.data.orderId}</p>
+          </div>
+        </div>
+        <div className="space-y-1 border-t border-stone-100 pt-2">
+          <div className="flex justify-between"><span className="text-stone-500">Return ID</span><span className="text-stone-900 font-medium">{r.data.returnId}</span></div>
+          <div className="flex justify-between"><span className="text-stone-500">Reason</span><span className="text-stone-900">{r.data.reason}</span></div>
+          <div className="flex justify-between"><span className="text-stone-500">Refund</span><span className="text-stone-900 font-semibold">${r.data.refundAmount?.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span className="text-stone-500">Method</span><span className="text-stone-900">{r.data.refundMethod}</span></div>
+          <div className="flex justify-between"><span className="text-stone-500">Timeline</span><span className="text-stone-900">{r.data.estimatedRefund}</span></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (r.type === 'exchangeConfirmation') {
+    return (
+      <div className="bg-white rounded-lg border border-stone-200 p-3 text-xs max-h-[250px] overflow-y-auto">
+        <div className="flex items-center gap-2 mb-2">
+          <svg className="w-4 h-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" /></svg>
+          <span className="font-semibold text-stone-500 uppercase tracking-wider">Exchange</span>
+        </div>
+        <div className="flex gap-2 items-center mb-2">
+          {r.data.item?.image && <img src={r.data.item.image} alt="" className="w-10 h-10 rounded object-cover" />}
+          <div>
+            <p className="font-medium text-stone-900">{r.data.item?.name}</p>
+            <p className="text-stone-400">Order #{r.data.orderId}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex-1 text-center bg-stone-50 rounded py-1.5">
+            <p className="text-[9px] text-stone-400">Current</p>
+            <p className="text-xs font-medium text-stone-600">Size {r.data.item?.size}</p>
+          </div>
+          <span className="text-stone-300">→</span>
+          <div className="flex-1 text-center bg-info/5 rounded py-1.5">
+            <p className="text-[9px] text-info">New</p>
+            <p className="text-xs font-semibold text-info">Size {r.data.newSize}</p>
+          </div>
+        </div>
+        <div className="space-y-1 border-t border-stone-100 pt-2">
+          <div className="flex justify-between"><span className="text-stone-500">Exchange ID</span><span className="text-stone-900 font-medium">{r.data.exchangeId}</span></div>
+          <div className="flex justify-between"><span className="text-stone-500">Cost</span><span className="text-success font-medium">Free exchange</span></div>
+          {r.data.estimatedDelivery && <div className="flex justify-between"><span className="text-stone-500">Delivery</span><span className="text-stone-900">{r.data.estimatedDelivery}</span></div>}
+        </div>
       </div>
     )
   }
@@ -480,13 +545,14 @@ function NonProductCard({ result }) {
           </svg>
           <span className="font-semibold text-success">Coupon Applied!</span>
         </div>
-        <div className="flex justify-between mb-1">
-          <span className="text-stone-600">{r.data.code}</span>
-          <span className="text-success font-semibold">-${r.data.discountAmount.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between pt-1 border-t border-success/20">
-          <span className="text-stone-900 font-medium">New Total</span>
-          <span className="text-stone-900 font-semibold">${r.data.newTotal.toFixed(2)}</span>
+        <div className="space-y-1">
+          <div className="flex justify-between"><span className="text-stone-600">Code</span><span className="font-mono text-stone-900 font-medium">{r.data.code}</span></div>
+          <div className="flex justify-between"><span className="text-stone-600">Discount</span><span className="text-success font-medium">{r.data.label}</span></div>
+          <div className="flex justify-between"><span className="text-stone-600">You save</span><span className="text-success font-semibold">-${r.data.discountAmount.toFixed(2)}</span></div>
+          <div className="flex justify-between pt-1.5 border-t border-success/20">
+            <span className="text-stone-900 font-semibold">New Total</span>
+            <span className="text-stone-900 font-semibold">${r.data.newTotal.toFixed(2)}</span>
+          </div>
         </div>
       </div>
     )
@@ -500,12 +566,22 @@ function NonProductCard({ result }) {
           <button
             key={addr.id}
             onClick={() => sendChatMessage(`Ship to my ${addr.label.toLowerCase()}`)}
-            className="w-full text-left bg-white rounded-md border border-stone-200 p-2 hover:border-stone-400 transition-colors text-xs"
+            className="w-full text-left bg-white rounded-md border border-stone-200 p-2.5 hover:border-stone-400 transition-colors text-xs"
           >
-            <p className="font-medium text-stone-900">{addr.label}</p>
-            <p className="text-stone-500">{addr.line1}</p>
+            <div className="flex justify-between items-start">
+              <p className="font-medium text-stone-900">{addr.label}</p>
+              {addr.isDefault && <span className="text-[9px] text-stone-400">Default</span>}
+            </div>
+            <p className="text-stone-600">{addr.name}</p>
+            <p className="text-stone-500">{addr.line1}, {addr.city}, {addr.state} {addr.zip}</p>
           </button>
         ))}
+        <button
+          onClick={() => sendChatMessage('I want to ship to a different address')}
+          className="w-full text-left text-[10px] text-accent-500 font-medium hover:text-accent-400 py-1"
+        >
+          + Use a different address
+        </button>
       </div>
     )
   }
@@ -576,9 +652,17 @@ function NonProductCard({ result }) {
 
   if (r.type === 'addressSaved') {
     return (
-      <div className="bg-success/5 rounded-lg border border-success/20 p-3 text-xs">
-        <p className="text-stone-900 font-medium">Address saved: {r.data.address.label}</p>
-        <p className="text-stone-600">{r.data.address.line1}, {r.data.address.city}</p>
+      <div className="bg-white rounded-lg border border-stone-200 p-3 text-xs">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-5 h-5 bg-success/10 rounded-full flex items-center justify-center">
+            <svg className="w-3 h-3 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+          </div>
+          <span className="font-semibold text-stone-500 uppercase tracking-wider">Address Saved</span>
+        </div>
+        <p className="font-medium text-stone-900">{r.data.address.label}</p>
+        <p className="text-stone-600">{r.data.address.name}</p>
+        <p className="text-stone-600">{r.data.address.line1}</p>
+        <p className="text-stone-600">{r.data.address.city}, {r.data.address.state} {r.data.address.zip}</p>
       </div>
     )
   }

@@ -52,8 +52,11 @@ export function handleToolCall(tool) {
     }
 
     case 'remove_from_cart': {
+      // Find the product before removing so we can show its details
+      const cartItem = useCartStore.getState().items.find(i => i.productId === args.product_id && i.size === args.size)
+      const removedProduct = cartItem?.product || null
       useCartStore.getState().removeItem(args.product_id, args.size)
-      return { type: 'cartUpdate', data: { productId: args.product_id, size: args.size, action: 'removed' } }
+      return { type: 'cartUpdate', data: { product: removedProduct, productId: args.product_id, size: args.size, action: 'removed' } }
     }
 
     case 'show_order_summary': {
