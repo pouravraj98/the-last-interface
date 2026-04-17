@@ -105,47 +105,83 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Floating AI Bar (visible when chat is closed) */}
+      {/* Floating AI Bar — Futuristic with border beam */}
       <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[520px] transition-all duration-300 ${
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[520px] transition-all duration-500 ${
           isOpen
-            ? 'opacity-0 pointer-events-none translate-y-4'
-            : 'opacity-100 translate-y-0'
+            ? 'opacity-0 pointer-events-none translate-y-4 scale-95'
+            : 'opacity-100 translate-y-0 scale-100'
         }`}
       >
-        <div className="bg-stone-900 rounded-2xl shadow-chat overflow-hidden">
-          {/* Top row: avatar + name + status */}
-          <div
-            className="flex items-center gap-3 px-5 pt-4 pb-3 cursor-pointer"
-            onClick={open}
-          >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #c8a97e, #a8865a)' }}>
-              <span className="text-white text-sm font-bold">F</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-white text-sm font-semibold">FORMA AI</span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                  <span className="text-green-400 text-[11px] font-medium">Online</span>
-                </span>
-              </div>
-              <p className="text-stone-400 text-xs mt-0.5 truncate">
-                Find products, identify items from a photo, or get styled
-              </p>
-            </div>
+        {/* Outer glow */}
+        <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-accent-400/20 via-transparent to-accent-400/20 blur-sm" />
+
+        {/* Border beam container */}
+        <div className="relative rounded-2xl overflow-hidden">
+          {/* Animated border beam */}
+          <div className="absolute inset-0 rounded-2xl" style={{ padding: '1px' }}>
+            <div
+              className="absolute w-20 h-20 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(224,125,75,0.6) 0%, transparent 70%)',
+                animation: 'borderBeam 4s linear infinite',
+                top: '-10px',
+                left: '-10px',
+              }}
+            />
           </div>
 
-          {/* Search-style input */}
-          <div className="px-4 pb-4">
+          {/* Main content */}
+          <div className="relative bg-stone-950/95 backdrop-blur-xl rounded-2xl border border-stone-800/50">
+            {/* Top row: avatar + name + status */}
             <div
-              className="flex items-center gap-2.5 bg-stone-800 rounded-xl px-4 py-2.5 cursor-text"
+              className="flex items-center gap-3 px-5 pt-4 pb-3 cursor-pointer group"
               onClick={open}
             >
-              <svg className="w-4 h-4 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-              <span className="text-stone-500 text-sm">Ask me anything...</span>
+              {/* Animated avatar with glow */}
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-accent-400/40 to-amber-400/40 blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
+                <div className="relative w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c8a97e, #a8865a)' }}>
+                  <span className="text-white text-sm font-bold">F</span>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-sm font-semibold">FORMA AI</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                    </span>
+                    <span className="text-green-400 text-[11px] font-medium">Online</span>
+                  </span>
+                </div>
+                <p className="text-stone-400 text-xs mt-0.5 truncate">
+                  Find products, identify items from a photo, or get styled
+                </p>
+              </div>
+
+              {/* Mic icon hint */}
+              <div className="w-8 h-8 rounded-full bg-stone-800/50 flex items-center justify-center group-hover:bg-accent-400/20 transition-colors">
+                <svg className="w-4 h-4 text-stone-500 group-hover:text-accent-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Search input with subtle gradient border */}
+            <div className="px-4 pb-4">
+              <div
+                className="flex items-center gap-2.5 bg-stone-900/80 border border-stone-700/50 rounded-xl px-4 py-2.5 cursor-text hover:border-stone-600/50 transition-colors group"
+                onClick={open}
+              >
+                <svg className="w-4 h-4 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <span className="text-stone-500 text-sm">Ask me anything...</span>
+                <span className="ml-auto text-[10px] text-stone-600 border border-stone-700 rounded px-1.5 py-0.5">⌘K</span>
+              </div>
             </div>
           </div>
         </div>
