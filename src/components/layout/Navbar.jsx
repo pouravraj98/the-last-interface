@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useCartStore } from '../../stores/useCartStore'
+import { useChatStore } from '../../stores/useChatStore'
 
 export default function Navbar() {
   const itemCount = useCartStore((s) => s.itemCount())
+  const compactBar = useChatStore((s) => s.compactBar)
+  const toggleBarStyle = useChatStore((s) => s.toggleBarStyle)
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="font-serif text-2xl tracking-tight text-stone-900">
           FORMA
@@ -33,6 +36,22 @@ export default function Navbar() {
 
         {/* Right icons */}
         <div className="flex items-center gap-5">
+          {/* Bar style toggle */}
+          <button
+            onClick={toggleBarStyle}
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border border-stone-200 text-stone-500 hover:text-stone-900 hover:border-stone-400 transition-colors"
+            title={compactBar ? 'Switch to expanded bar' : 'Switch to compact bar'}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              {compactBar ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+              )}
+            </svg>
+            {compactBar ? 'Expanded' : 'Compact'}
+          </button>
+
           {/* Search */}
           <button className="text-stone-500 hover:text-stone-900 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

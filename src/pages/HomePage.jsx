@@ -9,7 +9,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative h-[85vh] min-h-[600px] bg-stone-900 flex items-center justify-center overflow-hidden">
+      <section className="relative h-[76vh] min-h-[520px] bg-stone-900 flex items-center justify-center overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80"
           alt="Fashion editorial"

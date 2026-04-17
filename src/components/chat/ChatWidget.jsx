@@ -10,11 +10,13 @@ import ChatHeader from './ChatHeader'
 import ChatMessages from './ChatMessages'
 import ChatInput from './ChatInput'
 import VoiceMode from './VoiceMode'
+import { BorderBeam } from 'border-beam'
 
 export default function ChatWidget() {
   const isOpen = useChatStore((s) => s.isOpen)
   const open = useChatStore((s) => s.open)
   const close = useChatStore((s) => s.close)
+  const compactBar = useChatStore((s) => s.compactBar)
   const voiceMode = useChatStore((s) => s.voiceMode)
   const messages = useChatStore((s) => s.messages)
   const hasGreeted = useChatStore((s) => s.hasGreeted)
@@ -105,46 +107,37 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Floating AI Bar — Futuristic with border beam */}
+      {/* Gradient def for sparkle icon */}
+      <svg className="absolute w-0 h-0">
+        <defs>
+          <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#A78BFA" />
+            <stop offset="100%" stopColor="#7C3AED" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* Floating AI Bar — toggleable between compact and expanded */}
       <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[520px] transition-all duration-500 ${
+        className={`fixed bottom-16 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ${
+          compactBar ? 'w-[90%] max-w-[480px]' : 'w-[90%] max-w-[520px]'
+        } ${
           isOpen
             ? 'opacity-0 pointer-events-none translate-y-4 scale-95'
             : 'opacity-100 translate-y-0 scale-100'
         }`}
       >
-        {/* Outer glow */}
-        <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-accent-400/20 via-transparent to-accent-400/20 blur-sm" />
-
-        {/* Border beam container */}
-        <div className="relative rounded-2xl overflow-hidden">
-          {/* Animated border beam */}
-          <div className="absolute inset-0 rounded-2xl" style={{ padding: '1px' }}>
+        <BorderBeam size={compactBar ? 'sm' : 'md'} colorVariant="colorful" duration={2.5} strength={0.6}>
+          <div className="bg-stone-950/95 backdrop-blur-xl rounded-2xl">
+            {/* Top row — always visible */}
             <div
-              className="absolute w-20 h-20 rounded-full"
-              style={{
-                background: 'radial-gradient(circle, rgba(224,125,75,0.6) 0%, transparent 70%)',
-                animation: 'borderBeam 4s linear infinite',
-                top: '-10px',
-                left: '-10px',
-              }}
-            />
-          </div>
-
-          {/* Main content */}
-          <div className="relative bg-stone-950/95 backdrop-blur-xl rounded-2xl border border-stone-800/50">
-            {/* Top row: avatar + name + status */}
-            <div
-              className="flex items-center gap-3 px-5 pt-4 pb-3 cursor-pointer group"
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer group"
               onClick={open}
             >
-              {/* Animated avatar with glow */}
-              <div className="relative">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-accent-400/40 to-amber-400/40 blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
-                <div className="relative w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c8a97e, #a8865a)' }}>
-                  <span className="text-white text-sm font-bold">F</span>
-                </div>
-              </div>
+              {/* AI icon — no box, just gradient sparkle */}
+              <svg className="w-8 h-8 shrink-0" viewBox="0 0 24 24" fill="url(#sparkleGrad)" stroke="none">
+                <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
+              </svg>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -157,34 +150,42 @@ export default function ChatWidget() {
                     <span className="text-green-400 text-[11px] font-medium">Online</span>
                   </span>
                 </div>
-                <p className="text-stone-400 text-xs mt-0.5 truncate">
-                  Find products, identify items from a photo, or get styled
-                </p>
+                {compactBar ? (
+                  <p className="text-stone-500 text-xs mt-0.5">Ask me anything</p>
+                ) : (
+                  <p className="text-stone-400 text-xs mt-0.5 truncate">Find products, identify items from a photo, or get styled</p>
+                )}
               </div>
 
-              {/* Mic icon hint */}
-              <div className="w-8 h-8 rounded-full bg-stone-800/50 flex items-center justify-center group-hover:bg-accent-400/20 transition-colors">
-                <svg className="w-4 h-4 text-stone-500 group-hover:text-accent-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              {/* Arrow / mic icon — no box */}
+              {compactBar ? (
+                <svg className="w-5 h-5 text-stone-500 group-hover:text-stone-300 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-stone-500 group-hover:text-stone-300 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
                 </svg>
-              </div>
+              )}
             </div>
 
-            {/* Search input with subtle gradient border */}
-            <div className="px-4 pb-4">
-              <div
-                className="flex items-center gap-2.5 bg-stone-900/80 border border-stone-700/50 rounded-xl px-4 py-2.5 cursor-text hover:border-stone-600/50 transition-colors group"
-                onClick={open}
-              >
-                <svg className="w-4 h-4 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
-                <span className="text-stone-500 text-sm">Ask me anything...</span>
-                <span className="ml-auto text-[10px] text-stone-600 border border-stone-700 rounded px-1.5 py-0.5">⌘K</span>
+            {/* Search input — only in expanded mode */}
+            {!compactBar && (
+              <div className="px-4 pb-3">
+                <div
+                  className="flex items-center gap-2.5 bg-stone-900/80 border border-stone-700/50 rounded-xl px-4 py-2.5 cursor-text hover:border-stone-600/50 transition-colors"
+                  onClick={open}
+                >
+                  <svg className="w-4 h-4 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  </svg>
+                  <span className="text-stone-500 text-sm">Ask me anything...</span>
+                  <span className="ml-auto text-[10px] text-stone-600 border border-stone-700 rounded px-1.5 py-0.5">⌘K</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        </div>
+        </BorderBeam>
       </div>
 
       {/* Chat popup (visible when open) */}

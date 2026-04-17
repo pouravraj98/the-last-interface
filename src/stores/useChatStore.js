@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 export const useChatStore = create((set, get) => ({
   isOpen: false,
+  compactBar: true,
   messages: [],
   conversationHistory: [],
   isTyping: false,
@@ -22,6 +23,7 @@ export const useChatStore = create((set, get) => ({
   shippingExplicitlySet: false,
 
   open: () => set({ isOpen: true }),
+  toggleBarStyle: () => set((s) => ({ compactBar: !s.compactBar })),
   close: () => set({ isOpen: false }),
   toggle: () => set((s) => ({ isOpen: !s.isOpen })),
 
