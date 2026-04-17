@@ -16,6 +16,7 @@ import OrderHistoryPage from './pages/OrderHistoryPage'
 import OrderDetailPage from './pages/OrderDetailPage'
 import WishlistPage from './pages/WishlistPage'
 import NotFoundPage from './pages/NotFoundPage'
+import ShowcasePage from './pages/ShowcasePage'
 
 export default function App() {
   // Scroll to top on route change
@@ -24,6 +25,16 @@ export default function App() {
 
   // Sync route changes to page context store (for multimodal awareness)
   usePageContext()
+
+  // Showcase is a standalone playground — render without store app shell
+  const isShowcase = pathname.startsWith('/showcase')
+  if (isShowcase) {
+    return (
+      <Routes>
+        <Route path="/showcase" element={<ShowcasePage />} />
+      </Routes>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50">
